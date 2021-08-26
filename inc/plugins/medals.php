@@ -132,7 +132,7 @@ function medals_uninstall()
 
 function medals_activate()
 {
-	global $db;
+	global $db, $lang;
 
 	// Add a new template (member_profile_medals) to our templates
 	$templatearray = array(
@@ -596,12 +596,12 @@ function medal_settings()
 // WOL Support
 function medals_fetch_wol_activity_end(&$args)
 {
-	if($args['activity'] != 'unknown')
+	if ($args['activity'] != 'unknown')
 	{
 		return;
 	}
 
-	if(my_strpos($args['location'], 'medals.php') === false)
+	if (my_strpos($args['location'], 'medals.php') === false)
 	{
 		return;
 	}
@@ -615,7 +615,7 @@ function medals_build_friendly_wol_location_end(&$args)
 
 	$lang->load('medals');
 
-	if($args['user_activity']['activity'] == 'medals')
+	if ($args['user_activity']['activity'] == 'medals')
 	{
 		$args['location_name'] = $lang->viewing_medals;
 	}
