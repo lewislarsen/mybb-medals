@@ -27,9 +27,24 @@ if (defined('THIS_SCRIPT'))
 		$templatelist .= 'medal_postbit';
 	}
 
-	if (THIS_SCRIPT == 'medals.php')
+	if (THIS_SCRIPT == 'private.php')
 	{
-		$templatelist .= 'medal_table,medal_user_all_medals_row,medal_user_all_medals_table,medal_user_row,medal_user_table,medal_view';
+		global $templatelist;
+		if (isset($templatelist))
+		{
+			$templatelist .= ',';
+		}
+		$templatelist .= 'medal_usercp_menu';
+	}
+
+	if (THIS_SCRIPT == 'usercp.php')
+	{
+		global $templatelist;
+		if (isset($templatelist))
+		{
+			$templatelist .= ',';
+		}
+		$templatelist .= 'medal_usercp_menu,medal_usercp_favoritemedals,medal_favorite_row,';
 	}
 }
 
@@ -48,6 +63,13 @@ $plugins->add_hook("member_profile_end", "medals_profile");
 $plugins->add_hook('fetch_wol_activity_end', 'medals_fetch_wol_activity_end');
 $plugins->add_hook('build_friendly_wol_location_end', 'medals_build_friendly_wol_location_end');
 
+$plugins->add_hook("datahandler_user_delete_content", "medal_user_delete");
+
+$plugins->add_hook("admin_formcontainer_end", "medals_usergroup_permission");
+$plugins->add_hook("admin_user_groups_edit_commit", "medals_usergroup_permission_commit");
+
+$plugins->add_hook("usercp_start", "medals_usercp");
+
 if (defined('IN_ADMINCP'))
 {
 	// Add our medal_settings() function to the setting management module to load language strings.
@@ -65,7 +87,7 @@ function medals_info()
 		"website"       => "",
 		"author"        => "Lewis Larsen",
 		"authorsite"    => "https://lewislarsen.codes",
-		"version"       => "1.0",
+		"version"       => "1.1",
 		"guid"          => "",
 		"codename"      => "medals",
 		"compatibility" => "*",
@@ -101,6 +123,24 @@ function medals_install()
       COLLATE=utf8_general_ci
 	  DEFAULT CHARSET=utf8;
      ");
+
+	$db->write_query("CREATE TABLE IF NOT EXISTS `" . TABLE_PREFIX . "medals_user_favorite` (
+      medals_user_favorite_id int(10) UNSIGNED NOT NULL auto_increment,
+      medal_id int(10) UNSIGNED NOT NULL DEFAULT '0',
+      user_id int(10) UNSIGNED NOT NULL DEFAULT '0',
+	  updated_at int(10) UNSIGNED NOT NULL DEFAULT '0',
+      PRIMARY KEY  (`medals_user_favorite_id`)
+    ) ENGINE=MyISAM  
+      COLLATE=utf8_general_ci
+	  DEFAULT CHARSET=utf8;
+     ");
+
+	$db->add_column("usergroups", "canmanagefavoritemedals", "tinyint(1) NOT NULL default '1'");
+
+	// Indexes to help make searching faster for the tables
+	$db->write_query("CREATE INDEX IDX_ADM_ID ON " . TABLE_PREFIX . "medals (admin_user_id);");
+	$db->write_query("CREATE INDEX IDX_USER_ID ON " . TABLE_PREFIX . "medals_user (user_id);");
+	$db->write_query("CREATE INDEX IDX_USER_ID ON " . TABLE_PREFIX . "medals_user_favorite (user_id);");
 }
 
 function medals_is_installed()
@@ -120,14 +160,24 @@ function medals_uninstall()
 
 	$db->write_query("DROP TABLE " . TABLE_PREFIX . "medals");
 	$db->write_query("DROP TABLE " . TABLE_PREFIX . "medals_user");
+	$db->write_query("DROP TABLE " . TABLE_PREFIX . "medals_user_favorite");
 
 	$db->delete_query("templategroups", "prefix IN('medal')");
 	$db->delete_query("templates", "title IN('medal_member_profile_medals')");
 	$db->delete_query("templates", "title IN('medal_member_profile_medals_row')");
 	$db->delete_query("templates", "title IN('medal_postbit')");
+	$db->delete_query("templates", "title IN('medal_favorite_no_medals')");
+	$db->delete_query("templates", "title IN('medal_favorite_row')");
+	$db->delete_query("templates", "title IN('medal_usercp_favoritemedals')");
+	$db->delete_query("templates", "title IN('medal_usercp_menu')");
 	$db->delete_query('settinggroups', "name='medal'");
 	$db->delete_query('settings', "name IN ('medal_postbit_count','medal_profile_count')");
 	rebuild_settings();
+
+	if ($db->field_exists("canmanagefavoritemedals", "usergroups"))
+	{
+		$db->drop_column("usergroups", "canmanagefavoritemedals");
+	}
 }
 
 function medals_activate()
@@ -139,93 +189,90 @@ function medals_activate()
 		'member_profile_medals'       => '<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
 	<tbody>
 		<tr>
-		<td class="thead" align="center" colspan="2"><strong>{$lang->users_medals}</strong></td>
+		<td class="thead" align="center" colspan="3"><strong>{$lang->users_medals}</strong></td>
 		</tr>
 		<tr>
-			<td class="tcat" width="60%"><span class="smalltext"><strong>{$lang->medal_name}</strong></span></td>
-			<td class="tcat" align="center" width="40%"><span class="smalltext"><strong>{$lang->medal_image}</strong></span></td>
+			<td class="tcat" width="50%"><span class="smalltext"><strong>{$lang->medal_name}</strong></span></td>
+			<td class="tcat" align="center" width="30%"><span class="smalltext"><strong>{$lang->medal_image}</strong></span></td>
+			<td class="tcat" align="center" width="30%"><span class="smalltext"><strong>{$lang->medal_date}</strong></span></td>
 		</tr>
 		{$medalRow}
 	</tbody>
 </table>
 <br />',
 		'member_profile_medals_row'   => '<tr>
-<td class="trow1"><a title="{$name}" href="medals.php?action=view&id={$id}"><strong>{$name}</strong></a></td>
+<td class="trow1"><strong>{$name}</strong></td>
 <td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
+<td class="trow1" align="center"><span class="smalltext">{$date}</span></td>
 </tr>',
 		'postbit'                     => '
-		</br>
 		<img src="{$post[\'medal_image\']}" alt="{$post[\'medal_name\']}"  title="{$post[\'medal_name\']} - {$post[\'medal_id\']}" style="width:16px;height:auto" />
 		',
-		'medal_table'                 => '<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
-		<tbody>
-			<tr>
-		<td class="thead" align="center" colspan="2"><strong>{$lang->medal_table_title}</strong></td>
-		</tr>
-			<tr>
-			<td class="tcat" width="60%"><span class="smalltext"><strong>{$lang->medal_name}</strong></span></td>
-			<td class="tcat" align="center" width="40%"><span class="smalltext"><strong>{$lang->medal_image}</strong></span></td>
-			</tr>
-			<tr>
-				<td class="trow1"><a title="{$name}" href="medals.php?action=view&id={$id}"><strong>{$name}</strong></a></td>
-<td class="trow2" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
-</tr>
-</tbody>
-</table></br>',
-		'medal_user_all_medals_row'   => '<tr>
-<td class="trow1"><a title="{$name}" href="?medals.php?action=view&id={$id}"><strong>{$name}</strong></a></td>
+		'favorite_row'                => '<tr>
+<td class="trow1">{$name}</td>
 <td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
-<td class="trow1">{$reason}</td>
-<td class="trow1">{$date}</td>
+<td class="trow1" align="center"><input type="checkbox" value="{$id}" name="medal" {$checked} /></td>
 </tr>',
-		'medal_user_all_medals_table' => '<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
-		<tbody>
-			<tr>
-		<td class="thead" align="center" colspan="4"><strong>{$lang->medals_username_breadcrumb}</strong></td>
-		</tr>
-			<tr>
-			<td class="tcat" width="30%"><span class="smalltext"><strong>{$lang->medal_name}</strong></span></td>
-			<td class="tcat" width="20%" align="center"><span class="smalltext"><strong>{$lang->medal_image}</strong></span></td>
-			<td class="tcat" align="center" width="30%"><span class="smalltext"><strong>{$lang->reason}</strong></span></td>
-			<td class="tcat" align="center" width="20%"><span class="smalltext"><strong>{$lang->date}</strong></span></td>
-			</tr>
-				{$userAllMedalsTableRow}
-		</tbody>
-		</table>
-</br>',
-		'medal_user_row'              => '<tr>
-<td class="trow1"><strong><a title="{$username}" href="medals.php?action=member&id={$user_id}">{$username}</a</strong></td>
-<td class="trow1">{$reason}</td>
-<td class="trow1">{$date}</td>
-</tr>',
-		'medal_user_table'            => '<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
-		<tbody>
-			<tr>
-		<td class="thead" align="center" colspan="4"><strong>{$lang->medals_table_name}</strong></td>
-		</tr>
-			<tr>
-			<td class="tcat" width="40%"><span class="smalltext"><strong>{$lang->username}</strong></span></td>
-			<td class="tcat" align="center" width="40%"><span class="smalltext"><strong>{$lang->reason}</strong></span></td>
-			<td class="tcat" align="center" width="40%"><span class="smalltext"><strong>{$lang->date}</strong></span></td>
-			</tr>
-				{$medalUserRow}
-		</tbody>
-		</table>
-</br>',
-		'medal_view'                  => '<html>
+		'usercp_favoritemedals'       => '<html>
 <head>
-<title>{$mybb->settings[\'bbname\']} - {$lang->medal_base_title}</title>
+<title>{$mybb->settings[\'bbname\']} - {$lang->manage_favorite_medals}</title>
 {$headerinclude}
 </head>
-	<body>
+<body>
 {$header}
-{$medalsUserTable}
-{$userAllMedalsTable}
-{$medalsTable}
+<table width="100%" border="0" align="center">
+<tr>
+	{$usercpnav}
+	<td valign="top">
+		<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
+			<tr>
+				<td class="thead" colspan="3"><strong>{$lang->manage_favorite_medals}</strong></td>
+			</tr>
+			<tr>
+				<td class="trow1" colspan="3">
+					<table cellspacing="0" cellpadding="0" width="100%">
+						<tr>
+							<td>{$lang->medal_explanation}</td>
+						</tr>
+						<tr>
+							<td>{$lang->favorite_medals_explanation}</td>
+						</tr>
+						<tr>
+							<td><strong>{$lang->medal_abuse_notice}</strong></td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<form action="usercp.php" method="post">
+			<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+			<tr>
+			<td class="tcat" width="30%"><span class="smalltext"><strong>{$lang->medal_name}</strong></span></td>
+			<td class="tcat" align="center" width="30%"><span class="smalltext"><strong>{$lang->medal_image}</strong></span></td>
+			<td class="tcat" align="center" width="40%"><span class="smalltext"><strong>{$lang->medal_action}</strong></span></td>
+			</tr>
+				{$noMedals}
+				{$medalRow}
+		</table>
+		<br />
+		<div align="center">
+			<input type="hidden" name="action" value="do_favoritemedals" />
+			<input type="submit" class="button" name="submit" value="{$lang->update_favorite_medals}" />
+			<a href="usercp.php?action=do_clearfavoritemedals">
+				<button type="button" class="button">{$lang->clear_favorite_medals}</button>
+			</a>
+		</div>
+	</td>
+</tr>
+</table>
+</form>
 {$footer}
 </body>
 </html>',
-		''                            => '',);
+		'favorite_no_medals'          => '<tr>
+<td colspan="3" class="trow1">{$lang->no_medals_found}</td>
+</tr>',
+		'usercp_menu'                 => '<tr><td class="trow1 smalltext"><a href="usercp.php?action=favoritemedals" class="usercp_nav_item usercp_nav_editlists">{$lang->ucp_nav_update_favorited_medals}</a></td></tr>',
+	);
 
 	$group = array(
 		'prefix' => $db->escape_string('medal'),
@@ -326,10 +373,8 @@ function medals_activate()
 	// Edit the index template and add our variable to above {$forums}
 	find_replace_templatesets("member_profile", "#" . preg_quote('{$profilefields}') . "#i", '{$profilefields}{$medals}');
 
-	find_replace_templatesets("postbit", '#' . preg_quote('{$post[\'user_details\']}') . '#', '{$post[\'user_details\']}{$post[\'medals\']}');
-	find_replace_templatesets("postbit_classic", '#' . preg_quote('{$post[\'user_details\']}') . '#', '{$post[\'user_details\']}{$post[\'medals\']}');
-
-
+	find_replace_templatesets("postbit", '#' . preg_quote('{$post[\'user_details\']}') . '#', '{$post[\'user_details\']}</br>{$post[\'medals\']}');
+	find_replace_templatesets("postbit_classic", '#' . preg_quote('{$post[\'user_details\']}') . '#', '{$post[\'user_details\']}</br>{$post[\'medals\']}');
 	// Settings group array details
 	$group = array(
 		'name'        => 'medal',
@@ -384,7 +429,15 @@ function medals_activate()
 		),
 		'display4' => array(
 			'optionscode' => 'groupselect',
-			'value'       => '',
+			'value'       => 'all',
+		),
+		'display5' => array(
+			'optionscode' => 'yesno',
+			'value'       => 1,
+		),
+		'display6' => array(
+			'optionscode' => 'yesno',
+			'value'       => 1,
 		),
 	);
 
@@ -458,8 +511,8 @@ function medals_deactivate()
 	// remove template edits
 	find_replace_templatesets("member_profile", "#" . preg_quote('{$medals}') . "#i", '', 0);
 
-	find_replace_templatesets("postbit", '#' . preg_quote('{$post[\'medals\']}') . '#', '', 0);
-	find_replace_templatesets("postbit_classic", '#' . preg_quote('{$post[\'medals\']}') . '#', '', 0);
+	find_replace_templatesets("postbit", '#' . preg_quote('</br>{$post[\'medals\']}') . '#', '', 0);
+	find_replace_templatesets("postbit_classic", '#' . preg_quote('</br>{$post[\'medals\']}') . '#', '', 0);
 }
 
 function medals_admin_user_menu(&$sub_menu)
@@ -490,7 +543,7 @@ function medals_admin_user_action_handler(&$actions)
 // Display medals on profile page
 function medals_profile()
 {
-	global $mybb, $db, $templates, $lang, $theme, $memprofile, $medals, $name, $image, $reason, $id;
+	global $mybb, $db, $templates, $lang, $theme, $memprofile, $medals, $name, $image, $reason, $id, $date;
 
 	// load language
 	$lang->load("medals");
@@ -515,6 +568,7 @@ function medals_profile()
 			$id = (string) $medal['medal_id'];
 			$name = (string) $medal['medal_name'];
 			$reason = (string) $medal['reason'];
+			$date = my_date('normal', $medal['created_at']);
 			$image = (string) $medal['medal_image_path'];
 
 			eval("\$medalRow .= \"" . $templates->get("medal_member_profile_medals_row") . "\";");
@@ -539,6 +593,7 @@ function medals_postbit(&$post)
 
 	$queryMedals = queryUser($post['uid'], $mybb->settings['medal_limit1'] ?? '4');
 
+	$post['medals'] = '';
 	// show template if user has 1 medal or more
 	if ($db->num_rows($queryMedals) > 0)
 	{
@@ -548,6 +603,7 @@ function medals_postbit(&$post)
 			$post['medal_id'] = (int) $medal['medal_id'];
 			$post['medal_name'] = (string) $medal['medal_name'];
 			$post['medal_image'] = (string) $medal['medal_image_path'];
+			$post['created_at'] = my_date('normal', $medal['created_at']);
 
 			eval("\$post['medals'] .= \"" . $templates->get("medal_postbit") . "\";");
 		}
@@ -564,7 +620,7 @@ function queryUser($userId, $limit = null): mysqli_result|bool|PDOStatement|null
 	}
 
 	return $db->query("
-	SELECT m.medal_name, m.medal_image_path, m.medal_id, mu.reason
+	SELECT m.medal_name, m.medal_image_path, m.medal_id, mu.created_at, mu.reason, mu.user_id, muf.medals_user_favorite_id
 	FROM `" . TABLE_PREFIX . "medals_user` 
 	    AS mu
 	    INNER JOIN `" . TABLE_PREFIX . "users` 
@@ -573,10 +629,20 @@ function queryUser($userId, $limit = null): mysqli_result|bool|PDOStatement|null
 	    INNER JOIN `" . TABLE_PREFIX . "medals` 
 	        AS m
 	        ON mu.medal_id = m.medal_id
+	    LEFT JOIN `" . TABLE_PREFIX . "medals_user_favorite` 
+	        AS muf
+	        ON muf.medal_id = m.medal_id
 	WHERE mu.user_id = $userId
-	ORDER BY mu.medal_user_id ASC
+		ORDER BY
+		muf.medals_user_favorite_id DESC,
+		mu.medal_user_id ASC
 	LIMIT $limit
 	");
+
+	/*	ORDER BY
+			muf.medals_user_favorite_id ASC,
+			mu.medal_user_id ASC*/
+	/*CASE WHEN muf.medals_user_favorite_id THEN muf.medals_user_favorite_idELSE mu.medal_user_id END*/
 }
 
 /*
@@ -618,5 +684,162 @@ function medals_build_friendly_wol_location_end(&$args)
 	if ($args['user_activity']['activity'] == 'medals')
 	{
 		$args['location_name'] = $lang->viewing_medals;
+	}
+}
+
+// Delete medals if user is deleted
+function medal_user_delete($delete)
+{
+	global $db;
+
+	// Remove any of the user(s) medals
+	$db->delete_query("medals_user", "user_id='{$delete->delete_uids}'");
+
+	return $delete;
+}
+
+// Admin CP permission control
+function medals_usergroup_permission()
+{
+	global $mybb, $lang, $form, $form_container, $run_module, $page;
+	$lang->load("medals", true);
+
+	if ($run_module == 'user' && $page->active_action == 'groups' && !empty($form_container->_title) & !empty($lang->misc) & $form_container->_title == $lang->misc)
+	{
+		$medalsOptions = array(
+			$form->generate_check_box('canmanagefavoritemedals', 1, $lang->can_manage_favorite_medals, array("checked" => $mybb->input['canmanagefavoritemedals'])));
+		$form_container->output_row($lang->favorite_medals, "", "<div class=\"group_settings_bit\">" . implode("</div><div class=\"group_settings_bit\">", $medalsOptions) . "</div>");
+	}
+}
+
+function medals_usergroup_permission_commit()
+{
+	global $mybb, $updated_group;
+	$updated_group['canmanagefavoritemedals'] = $mybb->get_input('canmanagefavoritemedals', MyBB::INPUT_INT);
+}
+
+// Add page to usercp
+function medals_usercp()
+{
+	global $db, $mybb, $lang, $templates, $theme, $headerinclude, $usercpnav, $header, $footer, $name, $image, $checked, $id, $reason;
+	$lang->load("medals");
+	$lang->load("usercp");
+
+	if ($mybb->get_input('action', MyBB::INPUT_STRING) == "favoritemedals")
+	{
+		add_breadcrumb($lang->nav_usercp, "usercp.php");
+		add_breadcrumb($lang->manage_favorite_medals, "usercp.php?action=favoritemedals");
+
+		// to silence undefined variables
+		$medalRow = '';
+		$noMedals = '';
+
+		// if no permission!
+		if (!$mybb->usergroup['canmanagefavoritemedals'])
+		{
+			error_no_permission();
+		}
+		$queryMedals = queryUser($mybb->user['uid'], '500');
+
+		if ($db->num_rows($queryMedals) > 0)
+		{
+			while ($medal = $db->fetch_array($queryMedals))
+			{
+				$id = (string) $medal['medal_id'];
+				$name = (string) $medal['medal_name'];
+				$image = (string) $medal['medal_image_path'];
+				$reason = (string) $medal['reason'];
+				$checked = (string) !is_null($medal['medals_user_favorite_id']) ? 'checked' : '';
+
+				eval("\$medalRow .= \"" . $templates->get("medal_favorite_row") . "\";");
+			}
+		}
+		else
+		{
+			eval("\$noMedals .= \"" . $templates->get("medal_favorite_no_medals") . "\";");
+		}
+		eval("\$favoriteManagementPage = \"" . $templates->get("medal_usercp_favoritemedals") . "\";");
+		output_page($favoriteManagementPage);
+	}
+
+	if ($mybb->request_method == "post" && $mybb->get_input('action', MyBB::INPUT_STRING) == "do_favorites")
+	{
+		// verify POST request
+		verify_post_check($mybb->get_input('my_post_key'));
+
+		// if no checkboxes selected
+		if (!($mybb->get_input('medals', MyBB::INPUT_ARRAY)) || !is_array($mybb->get_input('medals', MyBB::INPUT_ARRAY)))
+		{
+			error($lang->no_medals_selected);
+		}
+
+		// grab the ids
+		$medalIds = implode(',', array_map('intval', $mybb->get_input('medals', MyBB::INPUT_ARRAY)));
+
+		// get the user
+		$user = $mybb->user['uid'];
+
+		// ensure the user has the medals they are trying to favorite
+		$obtainUsersMedalIDs = $db->write_query("
+		SELECT mu.medal_id 
+		FROM `" . TABLE_PREFIX . "medals_user`
+		AS mu
+		WHERE mu.medal_id
+		IN ($medalIds)
+		AND mu.user_id = $user
+		");
+
+		if (!$db->num_rows($obtainUsersMedalIDs))
+		{
+			error($lang->invalid_medals);
+		}
+		else
+		{
+			// delete the existing ids for the user
+			$db->delete_query('medals_user_favorite', "user_id = $user");
+
+			// insert new IDs
+			$dateline = time();
+
+			foreach ($mybb->get_input('medals', MyBB::INPUT_ARRAY) as $id)
+			{
+				$db->write_query("
+				INSERT INTO `" . TABLE_PREFIX . "medals_user_favorite` (user_id, medal_id, updated_at)
+				VALUES ($user, $id, $dateline)");
+			}
+		}
+		redirect("usercp.php?action=favoritemedals", $lang->favorite_medals_updated, $lang->manage_favorite_medals, true);
+	}
+
+	if ($mybb->get_input('action', MyBB::INPUT_STRING) == "do_clearfavoritemedals")
+	{
+
+		// if no permission!
+		if (!$mybb->usergroup['canmanagefavoritemedals'])
+		{
+			error_no_permission();
+		}
+
+		// get the user
+		$user = $mybb->user['uid'];
+
+		// ensure the user has any favorite medals
+		$obtainUsersFavoriteMedals = $db->write_query("
+		SELECT mu.medal_id 
+		FROM `" . TABLE_PREFIX . "medals_user_favorite`
+		AS mu
+		WHERE mu.user_id = $user
+		");
+
+		if ($db->num_rows($obtainUsersFavoriteMedals) == 0)
+		{
+			error($lang->no_medals_found_clear);
+		}
+		else
+		{
+			$db->delete_query('medals_user_favorite', "user_id = $user");
+		}
+
+		redirect("usercp.php?action=favoritemedals", $lang->favorite_medals_cleared, $lang->manage_favorite_medals, true);
 	}
 }

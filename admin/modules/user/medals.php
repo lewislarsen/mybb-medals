@@ -1,6 +1,6 @@
 <?php
 
-global $page, $mybb, $lang, $errors, $db;
+global $page, $mybb, $lang, $errors, $db, $settings;
 
 if (!defined("IN_MYBB"))
 {
@@ -54,7 +54,7 @@ if (!$mybb->input['action'])
 		$medal['medal_name'] = htmlspecialchars_uni($medal['medal_name']);
 		$table->construct_cell("<a href=\"index.php?module=user-medals&amp;action=edit&amp;id={$medal['medal_id']}\"><strong>{$medal['medal_name']}</strong></a>");
 		$table->construct_cell("{$medal['medal_description']}");
-		$table->construct_cell("<img style='width:40px;height:auto;' src=\"{$mybb->settings['bburl']}/{$medal['medal_image_path']}\" />", array("class" => "align_center"));
+		$table->construct_cell("<img style='width:21px;height:auto;' src=\"{$mybb->settings['bburl']}/{$medal['medal_image_path']}\" />", array("class" => "align_center"));
 		$table->construct_cell(my_date('relative', $medal['created_at']), array("class" => "align_center"));
 		$table->construct_cell("<a href=\"index.php?module=user-medals&amp;action=edit&amp;id={$medal['medal_id']}\">{$lang->edit}</a>", array("width" => 100, "class" => "align_center"));
 		$table->construct_cell("<a href=\"index.php?module=user-medals&amp;action=delete&amp;id={$medal['medal_id']}&amp;my_post_key={$mybb->post_code}\" onclick=\"return AdminCP.deleteConfirmation(this, '{$lang->medal_deletion_confirmation}')\">{$lang->delete}</a>", array("width" => 100, "class" => "align_center"));
@@ -136,9 +136,9 @@ if ($mybb->input['action'] == "add")
 if ($mybb->input['action'] == "edit")
 {
 	$query = $db->simple_select("medals", "*", "medal_id='" . $mybb->get_input('id', MyBB::INPUT_INT) . "'");
-	$usertitle = $db->fetch_array($query);
+	$medal = $db->fetch_array($query);
 
-	if (!$usertitle['medal_id'])
+	if (!$medal['medal_id'])
 	{
 		flash_message($lang->invalid_medal, 'error');
 		admin_redirect("index.php?module=user-medals");
@@ -164,10 +164,10 @@ if ($mybb->input['action'] == "edit")
 				"medal_image_path"  => $db->escape_string($mybb->input['medal_image_path']),
 			);
 
-			$db->update_query("medals", $updated_title, "medal_id='{$usertitle['medal_id']}'");
+			$db->update_query("medals", $updated_title, "medal_id='{$medal['medal_id']}'");
 
 			// Log admin action
-			//log_admin_action($usertitle['utid'], $mybb->input['title'], $mybb->input['posts']);
+			//log_admin_action($medal['medal_id'], $mybb->input['medal_name'], $mybb->input['medal_image_path']);
 
 			flash_message($lang->success_medal_updated, 'success');
 			admin_redirect("index.php?module=user-medals");
@@ -177,14 +177,8 @@ if ($mybb->input['action'] == "edit")
 	$page->add_breadcrumb_item($lang->edit_medal);
 	$page->output_header($lang->medals . " - " . $lang->edit_medal);
 
-	$sub_tabs['edit_title'] = array(
-		'title'       => $lang->edit_medal,
-		'link'        => "index.php?module=user-medals&amp;action=edit&amp;id=" . $usertitle['medal_id'],
-		'description' => $lang->edit_medal_desc,
-	);
-
-	$page->output_nav_tabs($sub_tabs, 'edit_title');
-	$form = new Form("index.php?module=user-medals&amp;action=edit&amp;id={$usertitle['medal_id']}", "post");
+	$page->output_nav_tabs($sub_tabs, 'medals');
+	$form = new Form("index.php?module=user-medals&amp;action=edit&amp;id={$medal['medal_id']}", "post");
 
 
 	if ($errors)
@@ -193,7 +187,7 @@ if ($mybb->input['action'] == "edit")
 	}
 	else
 	{
-		$mybb->input = array_merge($mybb->input, $usertitle);
+		$mybb->input = array_merge($mybb->input, $medal);
 	}
 
 	$form_container = new FormContainer($lang->edit_medal);
@@ -399,13 +393,21 @@ if ($mybb->input['action'] == "members")
 	$page->output_nav_tabs($sub_tabs, 'users_medals');
 
 	$table = new Table;
-	$table->construct_header($lang->medal_user, array('width' => '200', 'class' => 'align_left'));
-	$table->construct_header($lang->medal, array('width' => '150', 'class' => 'align_center'));
-	$table->construct_header($lang->medal_image, array('width' => '250', 'class' => 'align_center'));
-	$table->construct_header($lang->medal_assigned_by, array('width' => '200', 'class' => 'align_left'));
+	if ($mybb->settings['medal_display5'])
+	{
+		$table->construct_header($lang->medal_user_avatar, array('width' => '90', 'class' => 'align_center'));
+	}
+	$table->construct_header($lang->medal_user, array('width' => '150', 'class' => 'align_center'));
+	$table->construct_header($lang->medal, array('width' => '200', 'class' => 'align_center'));
+	$table->construct_header($lang->medal_image, array('width' => '200', 'class' => 'align_center'));
+	if ($mybb->settings['medal_display6'])
+	{
+		$table->construct_header($lang->medal_admin_avatar, array('width' => '90', 'class' => 'align_center'));
+	}
+	$table->construct_header($lang->medal_assigned_by, array('width' => '150', 'class' => 'align_center'));
 	$table->construct_header($lang->medal_reason, array('width' => '250', 'class' => 'align_center'));
 	$table->construct_header($lang->medal_assigned_at, array('width' => '200', 'class' => 'align_center'));
-	$table->construct_header($lang->controls, array("class" => "align_center", "colspan" => 1, "width" => 100));
+	$table->construct_header($lang->controls, array("class" => "align_center", "colspan" => 2, "width" => 200));
 
 	$query = $db->write_query("
 	SELECT medu.medal_user_id as id, 
@@ -413,9 +415,17 @@ if ($mybb->input['action'] == "members")
 	       medu.created_at as assigned_at, 
 	       u.uid as member_id, 
 	       u.username as member_username,
+	       u.avatar as member_avatar,
+	       u.avatardimensions as member_avatar_dimensions,
+	       u.usergroup as member_usergroup,
+	       u.displaygroup as member_displaygroup,
 	       a.uid as admin_member_id,
 	       a.username as admin_username,
-	       med.medal_name, med.medal_image_path 
+	       a.avatar as admin_avatar,
+	       a.avatardimensions as admin_avatar_dimensions,
+	       a.usergroup as admin_usergroup,
+	       a.displaygroup as admin_displaygroup,
+	       med.medal_name, med.medal_image_path, med.medal_id 
 	FROM `" . TABLE_PREFIX . "medals_user`
 	    AS medu
 	    LEFT JOIN `" . TABLE_PREFIX . "users`
@@ -427,31 +437,41 @@ if ($mybb->input['action'] == "members")
 	    LEFT JOIN `" . TABLE_PREFIX . "users` 
 	        AS a
 	        ON medu.admin_user_id = a.uid
-	ORDER BY medu.medal_id
+	ORDER BY medu.medal_user_id DESC
 	");
-
-	//var_dump($db->fetch_array($query));
 
 	while ($member_medal = $db->fetch_array($query))
 	{
-		//$member_medal['medal_name'] = htmlspecialchars_uni($member_medal['medal_name']);
+		$memberUsername = build_profile_link(format_name(htmlspecialchars_uni($member_medal['member_username']), $member_medal['member_usergroup'], $member_medal['member_displaygroup']), $member_medal['member_id'], "_blank");
+		$adminUsername = build_profile_link(format_name(htmlspecialchars_uni($member_medal['admin_username']), $member_medal['admin_usergroup'], $member_medal['admin_displaygroup']), $member_medal['admin_member_id'], "_blank");
 
-		$memberUsername = htmlspecialchars_uni($member_medal['member_username']);
-		$adminUsername = htmlspecialchars_uni($member_medal['admin_username']);
+		$avatarDimensions = "70x70";
 
-		$table->construct_cell("<strong>{$memberUsername}</strong>");
+		$memberAvatar = format_avatar($member_medal['member_avatar'], $member_medal['member_avatar_dimensions'], $avatarDimensions);
+		$adminAvatar = format_avatar($member_medal['admin_avatar'], $member_medal['admin_avatar_dimensions'], $avatarDimensions);
+
+		if ($mybb->settings['medal_display5'])
+		{
+			$table->construct_cell("<img src=\"" . $memberAvatar['image'] . "\" alt=\"\" {$memberAvatar['width_height']} />", array("class" => "align_center"));
+		}
+		$table->construct_cell("<strong>{$memberUsername}</strong>", array("class" => "align_center"));
 		$table->construct_cell("{$member_medal['medal_name']}", array("class" => "align_center"));
-		$table->construct_cell("<img style='width:40px;height:auto;' src=\"{$mybb->settings['bburl']}/{$member_medal['medal_image_path']}\" />", array("class" => "align_center"));
-		$table->construct_cell("<strong>{$adminUsername}</strong>");
+		$table->construct_cell("<img style='width:30px;height:auto;' src=\"{$mybb->settings['bburl']}/{$member_medal['medal_image_path']}\" />", array("class" => "align_center"));
+		if ($mybb->settings['medal_display6'])
+		{
+			$table->construct_cell("<img src=\"" . $adminAvatar['image'] . "\" alt=\"\" {$adminAvatar['width_height']} />", array("class" => "align_center"));
+		}
+		$table->construct_cell("<strong>{$adminUsername}</strong>", array("class" => "align_center"));
 		$table->construct_cell("{$member_medal['reason']}", array("class" => "align_center"));
 		$table->construct_cell(my_date('relative', $member_medal['assigned_at']), array("class" => "align_center"));
-		$table->construct_cell("<a href=\"index.php?module=user-medals&amp;action=revoke&amp;id={$member_medal['id']}\">{$lang->revoke_medal}</a>", array("width" => 100, "class" => "align_center"));
+		$table->construct_cell("<a href=\"index.php?module=user-medals&amp;action=revoke&amp;id={$member_medal['id']}&amp;medal_id={$member_medal['medal_id']}\">{$lang->revoke_medal}</a>", array("width" => 100, "class" => "align_center"));
+		$table->construct_cell("<a href=\"index.php?module=user-medals&amp;action=editreason&amp;id={$member_medal['id']}\">{$lang->edit_reason}</a>", array("width" => 100, "class" => "align_center"));
 		$table->construct_row();
 	}
 
 	if ($table->num_rows() == 0)
 	{
-		$table->construct_cell($lang->medals_users_none, array('colspan' => 7));
+		$table->construct_cell($lang->medals_users_none, array('colspan' => 10));
 		$table->construct_row();
 		$no_results = true;
 	}
@@ -466,11 +486,32 @@ if ($mybb->input['action'] == "revoke")
 	$query = $db->simple_select("medals_user", "medal_user_id", "medal_user_id='" . $mybb->get_input('id', MyBB::INPUT_INT) . "'");
 	$medalUser = $db->fetch_array($query);
 
+	// refactor this into an inner join with ^^ above query
+	$medalQuery = $db->simple_select("medals", "medal_id", "medal_id='" . $mybb->get_input('medal_id', MyBB::INPUT_INT) . "'");
+	$medal = $db->fetch_array($medalQuery);
+
+	$userId = $mybb->get_input('id', MyBB::INPUT_INT);
+	$medalId = $mybb->get_input('medal_id', MyBB::INPUT_INT);
+
+	$selectFavoriteMedal = $db->write_query("
+	SELECT medal_id, user_id FROM `" . TABLE_PREFIX . "medals_user_favorite`
+	WHERE medal_id = $medalId
+	AND user_id = $userId
+	LIMIT 1
+	");
+
 	if (!$medalUser['medal_user_id'])
 	{
 		flash_message($lang->invalid_assigned_medal, 'error');
-		admin_redirect("index.php?module=user-medals");
+		admin_redirect("index.php?module=user-medals&amp;action=members");
 	}
+
+	// this line of codes throws the error for some reason if "no" is clicked. Weird. Investigate this.
+	/*	if (!$medal['medal_id'])
+	{
+		flash_message($lang->invalid_medal, 'error');
+		admin_redirect("index.php?module=user-medals&amp;action=members");
+	}*/
 
 	// User clicked no
 	if ($mybb->get_input('no'))
@@ -482,6 +523,12 @@ if ($mybb->input['action'] == "revoke")
 	{
 		$db->delete_query("medals_user", "medal_user_id='{$medalUser['medal_user_id']}'");
 
+		// delete the medal from the member's favorites too, if favorited!
+		if ($db->num_rows($selectFavoriteMedal) == 1)
+		{
+			$db->delete_query("medals_user_favorite", "medal_user_id='" . (int) $medalUser['medal_user_id'] . "' AND medal_id='" . (int) $medal['medal_id']);
+		}
+
 		flash_message($lang->success_medal_revoked, 'success');
 		admin_redirect("index.php?module=user-medals&amp;action=members");
 	}
@@ -489,4 +536,58 @@ if ($mybb->input['action'] == "revoke")
 	{
 		$page->output_confirm_action("index.php?module=user-medals&amp;action=revoke&amp;id={$medalUser['medal_user_id']}", $lang->medal_revoke_confirmation);
 	}
+}
+
+if ($mybb->input['action'] == "editreason")
+{
+	$query = $db->simple_select("medals_user", "*", "medal_user_id='" . $mybb->get_input('id', MyBB::INPUT_INT) . "'");
+	$medalUser = $db->fetch_array($query);
+
+	if (!$medalUser['medal_user_id'])
+	{
+		flash_message($lang->invalid_assigned_medal, 'error');
+		admin_redirect("index.php?module=user-medals&amp;action=members");
+	}
+
+	if ($mybb->request_method == "post")
+	{
+		if (!$errors)
+		{
+			$updatedReason = array(
+				"reason"  => $db->escape_string($mybb->input['reason']),
+			);
+
+			$db->update_query("medals_user", $updatedReason, "medal_user_id='{$medalUser['medal_user_id']}'");
+
+			flash_message($lang->success_reason_updated, 'success');
+			admin_redirect("index.php?module=user-medals&amp;action=members");
+		}
+	}
+
+	$page->add_breadcrumb_item($lang->edit_reason);
+	$page->output_header($lang->medals . " - " . $lang->edit_reason_desc);
+
+	$page->output_nav_tabs($sub_tabs, 'users_medals');
+	$form = new Form("index.php?module=user-medals&amp;action=editreason&amp;id={$medalUser['medal_user_id']}", "post");
+
+
+	if ($errors)
+	{
+		$page->output_inline_error($errors);
+	}
+	else
+	{
+		$mybb->input = array_merge($mybb->input, $medalUser);
+	}
+
+	$form_container = new FormContainer($lang->edit_reason);
+	$form_container->output_row($lang->medal_reason, $lang->reason_desc, $form->generate_text_area('reason', $mybb->input['reason'], array('id' => 'reason')), 'reason');
+	$form_container->end();
+
+	$buttons[] = $form->generate_submit_button($lang->save_reason);
+
+	$form->output_submit_wrapper($buttons);
+	$form->end();
+
+	$page->output_footer();
 }
