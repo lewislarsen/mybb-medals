@@ -49,34 +49,54 @@ $l['edit_reason'] = 'Edit reason';
 $l['success_reason_updated'] = "Reason has been updated.";
 $l['edit_reason_desc'] = 'Update the reason for granting a medal to a member.';
 $l['save_reason'] = "Save reason";
-
+// stats
+$l['statistics'] = "Statistics";
+$l['statistics_desc'] = "Statistics for the medal system.";
+$l['medal_statistics'] = "Medal statistics";
+$l['medal_member_statistics'] = "Medal member statistics";
+$l['most_awarded_medal'] = "Most awarded medal";
+$l['least_awarded_medal'] = "Least awarded medal";
+$l['most_awarded_member'] = "Member with most medals";
+$l['most_given_out_by'] = "Most given out by admin";
+$l['medal_count'] = "Medal count";
+$l['member_with_medal_count'] = "Number of members with medals";
+$l['member_ranking'] = "Member ranking";
+$l['latest_medal_created'] = "Latest medal created";
+$l['latest_member_rewarded'] = "Latest member rewarded";
+$l['member_medal_rankings'] = "Top 10 Members";
+$l['member_medal_rankings_none'] = "There are no members that have medals assigned, assign members medals to populate this table.";
+$l['most_favorited_medal'] = "Most favorited medal";
+$l['total_members_with_favorites'] = "Favorite count";
+$l['medal_settings'] = "Configured settings";
+$l['medal_setting'] = "Medal setting";
+$l['medal_value'] = "Setting value";
+$l['medal_setting_enabled'] = "Setting enabled";
+$l['medal_setting_disabled'] = "Setting disabled";
+$l['medal_page_all_groups'] = "All Groups";
+$l['medal_page_no_groups'] = "None";
+$l['medals_plugin_activated'] = "Medals Plugin Activated";
+$l['medals_plugin_activated_member'] = "Medals Plugin Activated By";
+$l['medals_plugin_activate_unknown'] = "Unknown";
+$l['member_joined_at'] = "Member joined";
+$l['member_last_active'] = "Member last active";
 // settings
 $l['setting_group_medal'] = 'Medal System';
 $l['setting_group_medal_desc'] = 'Configure the medal system settings.';
-
 $l['setting_medal_display1'] = 'Display on Postbit';
 $l['setting_medal_display1_desc'] = 'Set to no if you do not want to display the medals on posts.';
-
 $l['setting_medal_display2'] = 'Display on Profile';
 $l['setting_medal_display2_desc'] = 'Set to no if you do not want to display the medals on profiles.';
-
 $l['setting_medal_display3'] = 'Enable Medals Page [Future Feature]';
 $l['setting_medal_display3_desc'] = 'Set to no if you do not want to enable the medals page, it will remain disabled.';
-
 $l['setting_medal_limit1'] = 'Limit on Postbit';
 $l['setting_medal_limit1_desc'] = 'How many medals should display on postbit.';
-
 $l['setting_medal_limit2'] = 'Limit on Profile';
 $l['setting_medal_limit2_desc'] = 'How many medals should display on profiles.';
-
 $l['setting_medal_display4'] = 'Medal Page Allowed Groups [Future Feature]';
 $l['setting_medal_display4_desc'] = 'Select the usergroups that have permission to access the medals page. Will not work if the page is disabled.';
-
 $l['setting_medal_display5'] = 'Enable Member Avatars in Members Table';
 $l['setting_medal_display5_desc'] = 'Set to no if you do not want member avatars to appear in the Members table of the Medals system.';
-
 $l['setting_medal_display6'] = 'Enable Admin Avatars in Members Table';
 $l['setting_medal_display6_desc'] = 'Set to no if you do not want admin avatars to appear in the Members table of the Medals system.';
-
 $l['can_manage_favorite_medals'] = 'Manage favorite medals';
 $l['favorite_medals'] = 'Favorite medals';

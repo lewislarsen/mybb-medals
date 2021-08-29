@@ -34,6 +34,11 @@ $sub_tabs['users_medals'] = array(
 	'link'        => "index.php?module=user-medals&action=members",
 	'description' => $lang->medals_user_desc,
 );
+$sub_tabs['statistics'] = array(
+	'title'       => $lang->statistics,
+	'link'        => "index.php?module=user-medals&action=statistics",
+	'description' => $lang->statistics_desc,
+);
 
 if (!$mybb->input['action'])
 {
@@ -554,7 +559,7 @@ if ($mybb->input['action'] == "editreason")
 		if (!$errors)
 		{
 			$updatedReason = array(
-				"reason"  => $db->escape_string($mybb->input['reason']),
+				"reason" => $db->escape_string($mybb->input['reason']),
 			);
 
 			$db->update_query("medals_user", $updatedReason, "medal_user_id='{$medalUser['medal_user_id']}'");
@@ -589,5 +594,427 @@ if ($mybb->input['action'] == "editreason")
 	$form->output_submit_wrapper($buttons);
 	$form->end();
 
+	$page->output_footer();
+}
+
+if ($mybb->input['action'] == "statistics")
+{
+	$page->add_breadcrumb_item($lang->statistics);
+	$page->output_header($lang->medals . " - " . $lang->statistics);
+	$page->output_nav_tabs($sub_tabs, 'statistics');
+
+	// medal count
+	$medalCountQuery = $db->write_query("
+	SELECT COUNT(medal_id) as count FROM `" . TABLE_PREFIX . "medals`");
+
+	if($db->num_rows($medalCountQuery) == 0)
+	{
+		$medalCount = 0;
+	}
+	else {
+		$medalCount = $db->fetch_field($medalCountQuery, 'count');
+	}
+
+	// most awarded medal
+	$mostAwardedMedalQuery = $db->write_query("
+	SELECT COUNT(mu.medal_id) as medal_count, 
+       m.medal_name 
+	FROM `" . TABLE_PREFIX . "medals_user` 
+	AS mu
+	INNER JOIN `" . TABLE_PREFIX . "medals` 
+	AS m
+	ON mu.medal_id = m.medal_id
+	GROUP BY mu.medal_id
+	ORDER BY medal_count DESC
+	LIMIT 1;
+	");
+
+	if($db->num_rows($mostAwardedMedalQuery) == 0)
+	{
+		$mostAwardedMedal = "—";
+	}
+	else {
+		$mostAwardedMedal = $db->fetch_field($mostAwardedMedalQuery, 'medal_name');
+	}
+
+	// least awarded medal
+	$leastAwardedMedalQuery = $db->write_query("
+	SELECT COUNT(mu.medal_id) as medal_count, 
+       m.medal_name 
+	FROM `" . TABLE_PREFIX . "medals_user` 
+	AS mu
+	INNER JOIN `" . TABLE_PREFIX . "medals` 
+	AS m
+	ON mu.medal_id = m.medal_id
+	GROUP BY mu.medal_id
+	ORDER BY medal_count ASC
+	LIMIT 1;
+	");
+
+	if($db->num_rows($leastAwardedMedalQuery) == 0)
+	{
+		$leastAwardedMedal = "—";
+	}
+	else {
+		$leastAwardedMedal = $db->fetch_field($leastAwardedMedalQuery, 'medal_name');
+	}
+
+	// latest medal created
+	$latestMedalCreatedQuery = $db->write_query("
+	SELECT medal_name 
+	FROM `" . TABLE_PREFIX . "medals` 
+	ORDER BY medal_id DESC
+	LIMIT 1;
+	");
+
+	if($db->num_rows($latestMedalCreatedQuery) == 0)
+	{
+		$latestMedalCreated = "—";
+	}
+	else {
+		$latestMedalCreated = $db->fetch_field($latestMedalCreatedQuery, 'medal_name');
+	}
+
+	// most favorite medal
+	$mostFavoriteMedalQuery = $db->write_query("
+	SELECT COUNT(muf.medal_id) as medal_count, 
+       m.medal_name 
+	FROM `" . TABLE_PREFIX . "medals_user_favorite` 
+	AS muf
+	INNER JOIN `" . TABLE_PREFIX . "medals` 
+	AS m
+	ON muf.medal_id = m.medal_id
+	GROUP BY muf.medal_id
+	ORDER BY medal_count ASC
+	LIMIT 1;
+	");
+
+	if($db->num_rows($mostFavoriteMedalQuery) == 0)
+	{
+		$mostFavoriteMedal = "—";
+	}
+	else {
+		$mostFavoriteMedal = $db->fetch_field($mostFavoriteMedalQuery, 'medal_name');
+	}
+
+	// number of members that have at least 1 medal
+	$numberOfMembersWithMedalsQuery = $db->write_query("
+	SELECT COUNT(DISTINCT u.username) as member_count
+	FROM `" . TABLE_PREFIX . "medals_user` 
+	AS mu
+	INNER JOIN `" . TABLE_PREFIX . "users` 
+	AS u
+	ON mu.user_id = u.uid
+	ORDER BY member_count ASC;
+	");
+
+	if($db->num_rows($numberOfMembersWithMedalsQuery) == 0)
+	{
+		$numberOfMembersWithMedals = "—";
+	}
+	else {
+		$numberOfMembersWithMedals = $db->fetch_field($numberOfMembersWithMedalsQuery, 'member_count');
+	}
+
+	// most awarded member
+	$mostAwardedMemberQuery = $db->write_query("
+	SELECT COUNT(user_id)
+	    as medal_count, 
+	       u.username, 
+	       u.usergroup,
+	       u.displaygroup,
+	       u.avatar, 
+	       u.uid as user_id,
+	       u.avatardimensions,
+	       u.lastactive,
+	       u.regdate
+	FROM mybb_medals_user as mu
+	    INNER JOIN mybb_users as u
+	        ON mu.user_id = u.uid
+	GROUP BY user_id
+	ORDER BY medal_count DESC
+	LIMIT 1;
+	");
+
+	if($db->num_rows($mostAwardedMemberQuery) == 0)
+	{
+		$mostAwardedMember = "—";
+	}
+	else {
+
+		while ($member = $db->fetch_array($mostAwardedMemberQuery))
+		{
+			$mostAwardedMember = build_profile_link(format_name(htmlspecialchars_uni($member['username']), $member['usergroup'], $member['displaygroup']), $member['user_id'], "_blank");
+		}
+	}
+
+	// most given out by admin
+	$mostAdminGivenOutQuery = $db->write_query("
+	SELECT COUNT(admin_user_id)
+	    as medal_count, 
+	       u.username, 
+	       u.usergroup,
+	       u.displaygroup,
+	       u.avatar, 
+	       u.uid as user_id,
+	       u.avatardimensions,
+	       u.lastactive,
+	       u.regdate
+	FROM mybb_medals_user as mu
+	    INNER JOIN mybb_users as u
+	        ON mu.user_id = u.uid
+	GROUP BY admin_user_id
+	ORDER BY medal_count DESC
+	LIMIT 1;
+	");
+
+	if($db->num_rows($mostAdminGivenOutQuery) == 0)
+	{
+		$mostGivenOut = "—";
+	}
+	else {
+
+		while ($member = $db->fetch_array($mostAdminGivenOutQuery))
+		{
+			$mostGivenOut = build_profile_link(format_name(htmlspecialchars_uni($member['username']), $member['usergroup'], $member['displaygroup']), $member['user_id'], "_blank");
+		}
+	}
+
+	// most recent medal went to what user?
+	$recentMedalUserQuery = $db->write_query("
+	SELECT u.username, 
+	       u.usergroup,
+	       u.displaygroup,
+	       u.avatar, 
+	       u.uid as user_id,
+	       u.avatardimensions,
+	       u.lastactive,
+	       u.regdate
+	FROM mybb_medals_user as mu
+	    INNER JOIN mybb_users as u
+	        ON mu.user_id = u.uid
+	ORDER BY medal_user_id ASC
+	LIMIT 1;
+	");
+
+	if($db->num_rows($recentMedalUserQuery) == 0)
+	{
+		$recentMember = "—";
+	}
+	else {
+
+		while ($member = $db->fetch_array($recentMedalUserQuery))
+		{
+			$recentMember = build_profile_link(format_name(htmlspecialchars_uni($member['username']), $member['usergroup'], $member['displaygroup']), $member['user_id'], "_blank");
+		}
+	}
+
+	// favorite count
+	$favoriteCountQuery = $db->write_query("
+	SELECT COUNT(medals_user_favorite_id) as count FROM `" . TABLE_PREFIX . "medals_user_favorite`");
+
+	if($db->num_rows($favoriteCountQuery) == 0)
+	{
+		$favoriteCount = 0;
+	}
+	else {
+		$favoriteCount = $db->fetch_field($favoriteCountQuery, 'count');
+	}
+
+	$table = new Table;
+	$table->construct_header($lang->medal_statistics, array("colspan" => 2));
+	$table->construct_header($lang->medal_member_statistics, array("colspan" => 2));
+
+	$table->construct_cell("<strong>{$lang->medal_count}</strong>", array('width' => '25%'));
+	$table->construct_cell("$medalCount", array('width' => '25%'));
+	$table->construct_cell("<strong>{$lang->member_with_medal_count}</strong>", array('width' => '200'));
+	$table->construct_cell("$numberOfMembersWithMedals", array('width' => '200'));
+	$table->construct_row();
+
+	$table->construct_cell("<strong>{$lang->most_awarded_medal}</strong>", array('width' => '25%'));
+	$table->construct_cell("$mostAwardedMedal", array('width' => '25%'));
+	$table->construct_cell("<strong>{$lang->most_awarded_member}</strong>", array('width' => '200'));
+	$table->construct_cell($mostAwardedMember, array('width' => '200'));
+	$table->construct_row();
+
+	$table->construct_cell("<strong>{$lang->least_awarded_medal}</strong>", array('width' => '25%'));
+	$table->construct_cell("$leastAwardedMedal", array('width' => '25%'));
+	$table->construct_cell("<strong>{$lang->most_given_out_by}</strong>", array('width' => '200'));
+	$table->construct_cell($mostGivenOut, array('width' => '200'));
+	$table->construct_row();
+
+	$table->construct_cell("<strong>{$lang->latest_medal_created}</strong>", array('width' => '25%'));
+	$table->construct_cell("$latestMedalCreated", array('width' => '25%'));
+	$table->construct_cell("<strong>{$lang->latest_member_rewarded}</strong>", array('width' => '200'));
+	$table->construct_cell($recentMember, array('width' => '200'));
+	$table->construct_row();
+
+	$table->construct_cell("<strong>{$lang->most_favorited_medal}</strong>", array('width' => '25%'));
+	$table->construct_cell("$mostFavoriteMedal", array('width' => '25%'));
+	$table->construct_cell("<strong>{$lang->total_members_with_favorites}</strong>", array('width' => '200'));
+	$table->construct_cell("$favoriteCount", array('width' => '200'));
+	$table->construct_row();
+
+	$table->output($lang->statistics);
+
+	$table = new Table;
+	$table->construct_header($lang->member_ranking, array('width' => '100', 'class' => 'align_center'));
+	$table->construct_header($lang->medal_count, array('width' => '100', 'class' => 'align_center'));
+	$table->construct_header($lang->medal_user_avatar, array('width' => '100', 'class' => 'align_center'));
+	$table->construct_header($lang->medal_user, array('width' => '200', 'class' => 'align_center'));
+	$table->construct_header($lang->member_joined_at, array('width' => '150', 'class' => 'align_center'));
+	$table->construct_header($lang->member_last_active, array('width' => '150', 'class' => 'align_center'));
+
+	$topMemberMedalHoldersQuery = $db->write_query("
+	SELECT COUNT(user_id)
+	    as medal_count, 
+	       u.username, 
+	       u.usergroup,
+	       u.displaygroup,
+	       u.avatar, 
+	       u.uid as user_id,
+	       u.avatardimensions,
+	       u.lastactive,
+	       u.regdate
+	FROM mybb_medals_user as mu
+	    INNER JOIN mybb_users as u
+	        ON mu.user_id = u.uid
+	GROUP BY user_id
+	ORDER BY medal_count DESC
+	LIMIT 10;
+	");
+
+	$ranking = 0;
+	while ($member = $db->fetch_array($topMemberMedalHoldersQuery))
+	{
+		$topMemberUsername = build_profile_link(format_name(htmlspecialchars_uni($member['username']), $member['usergroup'], $member['displaygroup']), $member['user_id'], "_blank");
+		$topMemberAvatar = format_avatar($member['avatar'], $member['avatardimensions'], '90x90');
+		$topMedalCount = $member['medal_count'];
+		$ranking = ++$ranking;
+		$topMemberLastActive = my_date('relative', $member['lastactive']);
+		$topMemberRegDate = my_date('relative', $member['regdate']);
+
+		$table->construct_cell("<strong>$ranking</strong>", array('class' => 'align_center'));
+		$table->construct_cell("$topMedalCount", array('class' => 'align_center'));
+		$table->construct_cell("<img src=\"" . $topMemberAvatar['image'] . "\" alt=\"\" {$topMemberAvatar['width_height']} />", array("class" => "align_center"));
+		$table->construct_cell($topMemberUsername, array('class' => 'align_center'));
+		$table->construct_cell($topMemberRegDate, array('class' => 'align_center'));
+		$table->construct_cell($topMemberLastActive, array('class' => 'align_center'));
+		$table->construct_row();
+	}
+
+	if ($table->num_rows() == 0)
+	{
+		$table->construct_cell($lang->member_medal_rankings_none, array('colspan' => 6));
+		$table->construct_row();
+		$no_results = true;
+	}
+
+	$table->output($lang->member_medal_rankings);
+
+	// SETTINGS TABLE
+	$postBitSetting = $mybb->settings['medal_display1'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
+	$profileSetting = $mybb->settings['medal_display2'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
+	$medalsPageSetting = $mybb->settings['medal_display3'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
+	$membersAvatarsSetting = $mybb->settings['medal_display5'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
+	$adminAvatarsSetting = $mybb->settings['medal_display6'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
+
+	// get the group page option
+	if ($mybb->settings['medal_display4'] == '-1')
+	{
+		$medalsPageGroupSetting = $lang->medal_page_all_groups;
+	}
+	elseif ($mybb->settings['medal_display4'] == '')
+	{
+		$medalsPageGroupSetting = $lang->medal_page_no_groups;
+	}
+	else
+	{
+		$ids = $mybb->settings['medal_display4'];
+
+		$groups = [];
+
+		foreach (explode(',', $ids) as $id)
+		{
+			$query = $db->write_query("SELECT title, gid FROM `" . TABLE_PREFIX . "usergroups` WHERE gid=$id ORDER BY title DESC");
+
+			while ($group = $db->fetch_array($query))
+			{
+				$groups[] = format_name(htmlspecialchars_uni($group['title']), $group['gid']);
+			}
+		}
+
+		$medalsPageGroupSetting = implode(', ', $groups);
+	}
+
+	// query the admin log
+	$adminLogQuery = $db->write_query("
+	SELECT a.data as log_data, 
+	       a.dateline as log_dateline,
+	       u.username as member_name,
+	       u.displaygroup as member_display_group_id,
+	       u.usergroup as usergroup_id,
+	       u.avatar as member_avatar, 
+	       u.uid as member_id,
+	       u.avatardimensions as member_avatar_dimensions
+	FROM mybb_adminlog AS a
+	    INNER JOIN mybb_users AS u
+	        ON a.uid = u.uid
+	    INNER JOIN mybb_usergroups as g
+	        ON g.gid = u.usergroup
+	WHERE a.module='config-plugins'
+	  AND a.action='activate'
+	ORDER BY a.dateline DESC 
+	");
+
+	if ($db->num_rows($adminLogQuery) > 0 && preg_match('/\b(medals)\b/', $db->fetch_field($adminLogQuery, 'log_data')))
+	{
+		while ($logEntry = $db->fetch_array($adminLogQuery))
+		{
+			$activationDate = my_date('relative', $logEntry['log_dateline']);
+			$activationUsername = build_profile_link(format_name(htmlspecialchars_uni($logEntry['member_name']), $logEntry['usergroup_id'], $logEntry['member_display_group_id']), $logEntry['member_id'], "_blank");
+			//$activationMemberAvatar = format_avatar($logEntry['member_avatar'], $logEntry['member_avatar_dimensions'], '30x30');
+		}
+	}
+	else
+	{
+		$activationDate = $lang->medals_plugin_activate_unknown;
+		$activationUsername = $lang->medals_plugin_activate_unknown;
+	}
+
+	$table = new Table;
+	$table->construct_header($lang->medal_setting, array("colspan" => 2));
+	$table->construct_header($lang->medal_value, array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display1}</strong>", array("colspan" => 2));
+	$table->construct_cell($postBitSetting, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_display2}</strong>", array("colspan" => 2));
+	$table->construct_cell($profileSetting, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_display3}</strong>", array("colspan" => 2));
+	$table->construct_cell($medalsPageSetting, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_display5}</strong>", array("colspan" => 2));
+	$table->construct_cell($membersAvatarsSetting, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_display6}</strong>", array("colspan" => 2));
+	$table->construct_cell($adminAvatarsSetting, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_limit1}</strong>", array("colspan" => 2));
+	$table->construct_cell($mybb->settings['medal_limit1'] . ' ' . $lang->medals, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_limit2}</strong>", array("colspan" => 2));
+	$table->construct_cell($mybb->settings['medal_limit2'] . ' ' . $lang->medals, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_display4}</strong>", array("colspan" => 2));
+	$table->construct_cell($medalsPageGroupSetting, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->medals_plugin_activated}</strong>", array("colspan" => 2));
+	$table->construct_cell($activationDate, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->medals_plugin_activated_member}</strong>", array("colspan" => 2));
+	$table->construct_cell($activationUsername, array("colspan" => 2));
+	$table->construct_row();
+	$table->output($lang->medal_settings);
 	$page->output_footer();
 }
