@@ -968,7 +968,7 @@ if ($mybb->input['action'] == "statistics")
 	        ON g.gid = u.usergroup
 	WHERE a.module='config-plugins'
 	  AND a.action='activate'
-	ORDER BY a.dateline DESC 
+	ORDER BY a.dateline ASC 
 	");
 
 	if ($db->num_rows($adminLogQuery) > 0 && preg_match('/\b(medals)\b/', $db->fetch_field($adminLogQuery, 'log_data')))
