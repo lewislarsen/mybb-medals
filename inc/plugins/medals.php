@@ -27,16 +27,6 @@ if (defined('THIS_SCRIPT'))
 		$templatelist .= 'medal_postbit';
 	}
 
-	if (THIS_SCRIPT == 'private.php')
-	{
-		global $templatelist;
-		if (isset($templatelist))
-		{
-			$templatelist .= ',';
-		}
-		$templatelist .= 'medal_usercp_menu';
-	}
-
 	if (THIS_SCRIPT == 'usercp.php')
 	{
 		global $templatelist;
@@ -44,7 +34,7 @@ if (defined('THIS_SCRIPT'))
 		{
 			$templatelist .= ',';
 		}
-		$templatelist .= 'medal_usercp_menu,medal_usercp_favoritemedals,medal_favorite_row,';
+		$templatelist .= 'medal_usercp_menu,medal_usercp_favoritemedals,medal_favorite_row';
 	}
 }
 
@@ -69,6 +59,7 @@ $plugins->add_hook("admin_formcontainer_end", "medals_usergroup_permission");
 $plugins->add_hook("admin_user_groups_edit_commit", "medals_usergroup_permission_commit");
 
 $plugins->add_hook("usercp_start", "medals_usercp");
+$plugins->add_hook('usercp_menu', 'medals_usercp_menu', 40);
 
 if (defined('IN_ADMINCP'))
 {
@@ -87,7 +78,7 @@ function medals_info()
 		"website"       => "",
 		"author"        => "Lewis Larsen",
 		"authorsite"    => "https://lewislarsen.codes",
-		"version"       => "1.1",
+		"version"       => "1.2",
 		"guid"          => "",
 		"codename"      => "medals",
 		"compatibility" => "*",
@@ -186,7 +177,7 @@ function medals_activate()
 
 	// Add a new template (member_profile_medals) to our templates
 	$templatearray = array(
-		'member_profile_medals'       => '<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
+		'member_profile_medals'     => '<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
 	<tbody>
 		<tr>
 		<td class="thead" align="center" colspan="3"><strong>{$lang->users_medals}</strong></td>
@@ -200,20 +191,20 @@ function medals_activate()
 	</tbody>
 </table>
 <br />',
-		'member_profile_medals_row'   => '<tr>
+		'member_profile_medals_row' => '<tr>
 <td class="trow1"><strong>{$name}</strong></td>
 <td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
 <td class="trow1" align="center"><span class="smalltext">{$date}</span></td>
 </tr>',
-		'postbit'                     => '
+		'postbit'                   => '
 		<img src="{$post[\'medal_image\']}" alt="{$post[\'medal_name\']}"  title="{$post[\'medal_name\']} - {$post[\'medal_id\']}" style="width:16px;height:auto" />
 		',
-		'favorite_row'                => '<tr>
+		'favorite_row'              => '<tr>
 <td class="trow1">{$name}</td>
 <td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
 <td class="trow1" align="center"><input type="checkbox" value="{$id}" name="medal" {$checked} /></td>
 </tr>',
-		'usercp_favoritemedals'       => '<html>
+		'usercp_favoritemedals'     => '<html>
 <head>
 <title>{$mybb->settings[\'bbname\']} - {$lang->manage_favorite_medals}</title>
 {$headerinclude}
@@ -268,10 +259,16 @@ function medals_activate()
 {$footer}
 </body>
 </html>',
-		'favorite_no_medals'          => '<tr>
+		'favorite_no_medals'        => '<tr>
 <td colspan="3" class="trow1">{$lang->no_medals_found}</td>
 </tr>',
-		'usercp_menu'                 => '<tr><td class="trow1 smalltext"><a href="usercp.php?action=favoritemedals" class="usercp_nav_item usercp_nav_editlists">{$lang->ucp_nav_update_favorited_medals}</a></td></tr>',
+		'usercp_menu'               => '<td class="trow1 smalltext"><a href="usercp.php?action=favoritemedals" class="usercp_nav_item usercp_nav_medals">{$lang->manage_favorite_medals}</a></td>
+
+<style type="text/css">
+.usercp_nav_medals {
+	background: url("images/medals.png") no-repeat left center;
+}
+</style>',
 	);
 
 	$group = array(
@@ -841,5 +838,17 @@ function medals_usercp()
 		}
 
 		redirect("usercp.php?action=favoritemedals", $lang->favorite_medals_cleared, $lang->manage_favorite_medals, true);
+	}
+}
+
+function medals_usercp_menu()
+{
+	global $mybb, $templates, $theme, $usercpmenu, $lang, $collapsed, $collapsedimg;
+
+	$lang->load("medals");
+
+	if ($mybb->usergroup['canmanagefavoritemedals'])
+	{
+		eval("\$usercpmenu .= \"" . $templates->get('medal_usercp_menu') . "\";");
 	}
 }

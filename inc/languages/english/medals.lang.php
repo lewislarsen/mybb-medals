@@ -24,7 +24,6 @@ $l['medal_invalid_medal'] = "The specified medal does not exist. Please try agai
 $l['viewing_medals'] = "Viewing <a href=\"medals.php\">Medals</a>";
 
 // ucp
-$l['ucp_nav_update_favorited_medals'] = "Favorite Medals";
 $l['choose_favorite_medals'] = "Select Medals";
 $l['manage_favorite_medals'] = "Manage Favorite Medals";
 $l['update_favorite_medals'] = "Update Favorite Medals";
