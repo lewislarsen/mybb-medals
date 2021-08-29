@@ -728,8 +728,8 @@ if ($mybb->input['action'] == "statistics")
 	       u.avatardimensions,
 	       u.lastactive,
 	       u.regdate
-	FROM mybb_medals_user as mu
-	    INNER JOIN mybb_users as u
+	FROM `" . TABLE_PREFIX . "medals_user`  as mu
+	INNER JOIN `" . TABLE_PREFIX . "users`  as u
 	        ON mu.user_id = u.uid
 	GROUP BY user_id
 	ORDER BY medal_count DESC
@@ -760,8 +760,8 @@ if ($mybb->input['action'] == "statistics")
 	       u.avatardimensions,
 	       u.lastactive,
 	       u.regdate
-	FROM mybb_medals_user as mu
-	    INNER JOIN mybb_users as u
+	FROM `" . TABLE_PREFIX . "medals_user`  as mu
+	    INNER JOIN `" . TABLE_PREFIX . "users`  as u
 	        ON mu.user_id = u.uid
 	GROUP BY admin_user_id
 	ORDER BY medal_count DESC
@@ -790,8 +790,8 @@ if ($mybb->input['action'] == "statistics")
 	       u.avatardimensions,
 	       u.lastactive,
 	       u.regdate
-	FROM mybb_medals_user as mu
-	    INNER JOIN mybb_users as u
+	FROM `" . TABLE_PREFIX . "medals_user`  as mu
+	    INNER JOIN `" . TABLE_PREFIX . "users` as u
 	        ON mu.user_id = u.uid
 	ORDER BY medal_user_id ASC
 	LIMIT 1;
@@ -876,8 +876,8 @@ if ($mybb->input['action'] == "statistics")
 	       u.avatardimensions,
 	       u.lastactive,
 	       u.regdate
-	FROM mybb_medals_user as mu
-	    INNER JOIN mybb_users as u
+	FROM `" . TABLE_PREFIX . "medals_user`  as mu
+	    INNER JOIN `" . TABLE_PREFIX . "users`  as u
 	        ON mu.user_id = u.uid
 	GROUP BY user_id
 	ORDER BY medal_count DESC
@@ -961,10 +961,10 @@ if ($mybb->input['action'] == "statistics")
 	       u.avatar as member_avatar, 
 	       u.uid as member_id,
 	       u.avatardimensions as member_avatar_dimensions
-	FROM mybb_adminlog AS a
-	    INNER JOIN mybb_users AS u
+	FROM `" . TABLE_PREFIX . "adminlog`  AS a
+	    INNER JOIN `" . TABLE_PREFIX . "users`  AS u
 	        ON a.uid = u.uid
-	    INNER JOIN mybb_usergroups as g
+	    INNER JOIN `" . TABLE_PREFIX . "usergroups`  as g
 	        ON g.gid = u.usergroup
 	WHERE a.module='config-plugins'
 	  AND a.action='activate'
