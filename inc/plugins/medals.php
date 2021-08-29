@@ -1,4 +1,5 @@
 <?php
+ini_set('display_errors', 1);
 
 // Disallow direct access to this file for security reasons
 if (!defined("IN_MYBB"))
@@ -759,7 +760,7 @@ function medals_usercp()
 		output_page($favoriteManagementPage);
 	}
 
-	if ($mybb->request_method == "post" && $mybb->get_input('action', MyBB::INPUT_STRING) == "do_favorites")
+	if ($mybb->request_method == "post" && $mybb->get_input('action', MyBB::INPUT_STRING) == "do_favoritemedals")
 	{
 		// verify POST request
 		verify_post_check($mybb->get_input('my_post_key'));
