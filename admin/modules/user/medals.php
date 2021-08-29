@@ -928,6 +928,10 @@ if ($mybb->input['action'] == "statistics")
 	{
 		$medalsPageGroupSetting = $lang->medal_page_no_groups;
 	}
+	elseif ($mybb->settings['medal_display4'] == 'all')
+	{
+		$medalsPageGroupSetting = $lang->medal_page_select_not_configured;
+	}
 	else
 	{
 		$ids = $mybb->settings['medal_display4'];

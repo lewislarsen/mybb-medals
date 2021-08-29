@@ -74,6 +74,7 @@ $l['medal_setting_enabled'] = "Setting enabled";
 $l['medal_setting_disabled'] = "Setting disabled";
 $l['medal_page_all_groups'] = "All Groups";
 $l['medal_page_no_groups'] = "None";
+$l['medal_page_select_not_configured'] = "<strong>Configure groups in <a href='index.php?module=config'>Settings</a>.</strong>";
 $l['medals_plugin_activated'] = "Medals Plugin Activated";
 $l['medals_plugin_activated_member'] = "Medals Plugin Activated By";
 $l['medals_plugin_activate_unknown'] = "Unknown";
