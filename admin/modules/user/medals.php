@@ -991,13 +991,21 @@ if ($mybb->input['action'] == "statistics")
 	ORDER BY a.dateline ASC 
 	");
 
-	if ($db->num_rows($adminLogQuery) > 0 && preg_match('/\b(medals)\b/', $db->fetch_field($adminLogQuery, 'log_data')))
+	if ($db->num_rows($adminLogQuery) > 0)
 	{
 		while ($logEntry = $db->fetch_array($adminLogQuery))
 		{
-			$activationDate = my_date('relative', $logEntry['log_dateline']);
-			$activationUsername = build_profile_link(format_name(htmlspecialchars_uni($logEntry['member_name']), $logEntry['usergroup_id'], $logEntry['member_display_group_id']), $logEntry['member_id'], "_blank");
-			//$activationMemberAvatar = format_avatar($logEntry['member_avatar'], $logEntry['member_avatar_dimensions'], '30x30');
+			if (preg_match('/\b(medals)\b/', $logEntry['log_data']))
+			{
+				$activationDate = my_date('relative', $logEntry['log_dateline']);
+				$activationUsername = build_profile_link(format_name(htmlspecialchars_uni($logEntry['member_name']), $logEntry['usergroup_id'], $logEntry['member_display_group_id']), $logEntry['member_id'], "_blank");
+				//$activationMemberAvatar = format_avatar($logEntry['member_avatar'], $logEntry['member_avatar_dimensions'], '30x30');
+			}
+			else
+			{
+				$activationDate = $lang->medals_plugin_activate_unknown;
+				$activationUsername = $lang->medals_plugin_activate_unknown;
+			}
 		}
 	}
 	else
@@ -1068,7 +1076,7 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_cell("<strong>{$lang->setting_medal_display6}</strong>", array("colspan" => 1));
 	$table->construct_cell($adminAvatarsSetting, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_display7}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display7}</strong>", array("colspan" => 1));
 	$table->construct_cell($statisticsPageAvatarsSetting, array("colspan" => 2));
 	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->setting_medal_limit1}</strong>", array("colspan" => 1));
@@ -1077,9 +1085,14 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_cell("<strong>{$lang->setting_medal_limit2}</strong>", array("colspan" => 1));
 	$table->construct_cell($mybb->settings['medal_limit2'] . ' ' . $lang->medals, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_display4}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display4}</strong>", array("colspan" => 1));
 	$table->construct_cell($medalsPageGroupSetting, array("colspan" => 2));
 	$table->construct_row();
+	$table->output($lang->medal_settings);
+
+	$table = new Table;
+	$table->construct_header($lang->medal_setting, array("colspan" => 1));
+	$table->construct_header($lang->medal_value, array("colspan" => 2));
 	$table->construct_cell("<strong>{$lang->medals_plugin_activated}</strong>", array("colspan" => 2));
 	$table->construct_cell($activationDate ?? $lang->medals_plugin_activate_unknown, array("colspan" => 2));
 	$table->construct_row();
@@ -1089,6 +1102,7 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_cell("<strong>{$lang->allowed_favorite_groups}</strong>", array("colspan" => 2));
 	$table->construct_cell($groupsThatCanManageFavorites, array("colspan" => 1));
 	$table->construct_row();
-	$table->output($lang->medal_settings);
+	$table->output($lang->plugin_details);
+
 	$page->output_footer();
 }

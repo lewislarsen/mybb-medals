@@ -113,3 +113,6 @@ $l['admin_log_medals_action_delete'] = "Deleted medal #{1} ({2})";
 $l['admin_log_medals_action_assign'] = "Assigned medal #{1} ({2}) to member #{4} ({3})";
 $l['admin_log_medals_action_revoke'] = "Revoked medal #{1} ({2}) from member #{4} ({3})";
 $l['admin_log_medals_action_editreason'] = "Edited medal #{1} ({2}) reason ({5}) for member #{4} ({3})";
+
+// plugin details
+$l['plugin_details'] = "Plugin Details";
