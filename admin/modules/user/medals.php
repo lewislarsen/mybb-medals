@@ -1051,30 +1051,30 @@ if ($mybb->input['action'] == "statistics")
 	}
 
 	$table = new Table;
-	$table->construct_header($lang->medal_setting, array("colspan" => 2));
+	$table->construct_header($lang->medal_setting, array("colspan" => 1));
 	$table->construct_header($lang->medal_value, array("colspan" => 2));
-	$table->construct_cell("<strong>{$lang->setting_medal_display1}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display1}</strong>", array("colspan" => 1));
 	$table->construct_cell($postBitSetting, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_display2}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display2}</strong>", array("colspan" => 1));
 	$table->construct_cell($profileSetting, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_display3}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display3}</strong>", array("colspan" => 1));
 	$table->construct_cell($medalsPageSetting, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_display5}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display5}</strong>", array("colspan" => 1));
 	$table->construct_cell($membersAvatarsSetting, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_display6}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_display6}</strong>", array("colspan" => 1));
 	$table->construct_cell($adminAvatarsSetting, array("colspan" => 2));
 	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->setting_medal_display7}</strong>", array("colspan" => 2));
 	$table->construct_cell($statisticsPageAvatarsSetting, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_limit1}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_limit1}</strong>", array("colspan" => 1));
 	$table->construct_cell($mybb->settings['medal_limit1'] . ' ' . $lang->medals, array("colspan" => 2));
 	$table->construct_row();
-	$table->construct_cell("<strong>{$lang->setting_medal_limit2}</strong>", array("colspan" => 2));
+	$table->construct_cell("<strong>{$lang->setting_medal_limit2}</strong>", array("colspan" => 1));
 	$table->construct_cell($mybb->settings['medal_limit2'] . ' ' . $lang->medals, array("colspan" => 2));
 	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->setting_medal_display4}</strong>", array("colspan" => 2));
@@ -1087,7 +1087,7 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_cell($activationUsername ?? $lang->medals_plugin_activate_unknown, array("colspan" => 2));
 	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->allowed_favorite_groups}</strong>", array("colspan" => 2));
-	$table->construct_cell($groupsThatCanManageFavorites, array("colspan" => 2));
+	$table->construct_cell($groupsThatCanManageFavorites, array("colspan" => 1));
 	$table->construct_row();
 	$table->output($lang->medal_settings);
 	$page->output_footer();
