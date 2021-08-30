@@ -80,6 +80,8 @@ $l['medals_plugin_activated_member'] = "Medals Plugin Activated By";
 $l['medals_plugin_activate_unknown'] = "Unknown";
 $l['member_joined_at'] = "Member joined";
 $l['member_last_active'] = "Member last active";
+$l['allowed_favorite_groups'] = "Groups with Medal Favoring Capability";
+$l['none_favorite_groups'] = "No Groups";
 // settings
 $l['setting_group_medal'] = 'Medal System';
 $l['setting_group_medal_desc'] = 'Configure the medal system settings.';

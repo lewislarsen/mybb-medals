@@ -610,11 +610,12 @@ if ($mybb->input['action'] == "statistics")
 	$medalCountQuery = $db->write_query("
 	SELECT COUNT(medal_id) as count FROM `" . TABLE_PREFIX . "medals`");
 
-	if($db->num_rows($medalCountQuery) == 0)
+	if ($db->num_rows($medalCountQuery) == 0)
 	{
 		$medalCount = 0;
 	}
-	else {
+	else
+	{
 		$medalCount = $db->fetch_field($medalCountQuery, 'count');
 	}
 
@@ -632,11 +633,12 @@ if ($mybb->input['action'] == "statistics")
 	LIMIT 1;
 	");
 
-	if($db->num_rows($mostAwardedMedalQuery) == 0)
+	if ($db->num_rows($mostAwardedMedalQuery) == 0)
 	{
 		$mostAwardedMedal = "—";
 	}
-	else {
+	else
+	{
 		$mostAwardedMedal = $db->fetch_field($mostAwardedMedalQuery, 'medal_name');
 	}
 
@@ -654,11 +656,12 @@ if ($mybb->input['action'] == "statistics")
 	LIMIT 1;
 	");
 
-	if($db->num_rows($leastAwardedMedalQuery) == 0)
+	if ($db->num_rows($leastAwardedMedalQuery) == 0)
 	{
 		$leastAwardedMedal = "—";
 	}
-	else {
+	else
+	{
 		$leastAwardedMedal = $db->fetch_field($leastAwardedMedalQuery, 'medal_name');
 	}
 
@@ -670,11 +673,12 @@ if ($mybb->input['action'] == "statistics")
 	LIMIT 1;
 	");
 
-	if($db->num_rows($latestMedalCreatedQuery) == 0)
+	if ($db->num_rows($latestMedalCreatedQuery) == 0)
 	{
 		$latestMedalCreated = "—";
 	}
-	else {
+	else
+	{
 		$latestMedalCreated = $db->fetch_field($latestMedalCreatedQuery, 'medal_name');
 	}
 
@@ -692,11 +696,12 @@ if ($mybb->input['action'] == "statistics")
 	LIMIT 1;
 	");
 
-	if($db->num_rows($mostFavoriteMedalQuery) == 0)
+	if ($db->num_rows($mostFavoriteMedalQuery) == 0)
 	{
 		$mostFavoriteMedal = "—";
 	}
-	else {
+	else
+	{
 		$mostFavoriteMedal = $db->fetch_field($mostFavoriteMedalQuery, 'medal_name');
 	}
 
@@ -711,11 +716,12 @@ if ($mybb->input['action'] == "statistics")
 	ORDER BY member_count ASC;
 	");
 
-	if($db->num_rows($numberOfMembersWithMedalsQuery) == 0)
+	if ($db->num_rows($numberOfMembersWithMedalsQuery) == 0)
 	{
 		$numberOfMembersWithMedals = "—";
 	}
-	else {
+	else
+	{
 		$numberOfMembersWithMedals = $db->fetch_field($numberOfMembersWithMedalsQuery, 'member_count');
 	}
 
@@ -739,11 +745,12 @@ if ($mybb->input['action'] == "statistics")
 	LIMIT 1;
 	");
 
-	if($db->num_rows($mostAwardedMemberQuery) == 0)
+	if ($db->num_rows($mostAwardedMemberQuery) == 0)
 	{
 		$mostAwardedMember = "—";
 	}
-	else {
+	else
+	{
 
 		while ($member = $db->fetch_array($mostAwardedMemberQuery))
 		{
@@ -771,11 +778,12 @@ if ($mybb->input['action'] == "statistics")
 	LIMIT 1;
 	");
 
-	if($db->num_rows($mostAdminGivenOutQuery) == 0)
+	if ($db->num_rows($mostAdminGivenOutQuery) == 0)
 	{
 		$mostGivenOut = "—";
 	}
-	else {
+	else
+	{
 
 		while ($member = $db->fetch_array($mostAdminGivenOutQuery))
 		{
@@ -800,11 +808,12 @@ if ($mybb->input['action'] == "statistics")
 	LIMIT 1;
 	");
 
-	if($db->num_rows($recentMedalUserQuery) == 0)
+	if ($db->num_rows($recentMedalUserQuery) == 0)
 	{
 		$recentMember = "—";
 	}
-	else {
+	else
+	{
 
 		while ($member = $db->fetch_array($recentMedalUserQuery))
 		{
@@ -816,11 +825,12 @@ if ($mybb->input['action'] == "statistics")
 	$favoriteCountQuery = $db->write_query("
 	SELECT COUNT(medals_user_favorite_id) as count FROM `" . TABLE_PREFIX . "medals_user_favorite`");
 
-	if($db->num_rows($favoriteCountQuery) == 0)
+	if ($db->num_rows($favoriteCountQuery) == 0)
 	{
 		$favoriteCount = 0;
 	}
-	else {
+	else
+	{
 		$favoriteCount = $db->fetch_field($favoriteCountQuery, 'count');
 	}
 
@@ -996,6 +1006,50 @@ if ($mybb->input['action'] == "statistics")
 		$activationUsername = $lang->medals_plugin_activate_unknown;
 	}
 
+	// groups allowed to manage their favorite medals
+	$groupsThatCanManageFavoritesQuery = $db->query("
+	SELECT gid 
+	FROM `" . TABLE_PREFIX . "usergroups`
+	WHERE canmanagefavoritemedals = 1 
+	");
+
+	if ($db->num_rows($groupsThatCanManageFavoritesQuery) > 0)
+	{
+		$groups = [];
+
+		/*while ($group = $db->fetch_array($groupsThatCanManageFavoritesQuery))
+		{
+			$gIds[] = $group['gid'];
+		}
+
+		$Ids = implode(',',  $gIds);
+
+		$yeet = $db->write_query("SELECT title, gid FROM `" . TABLE_PREFIX . "usergroups` WHERE gid IN ({$Ids})");
+
+		while ($group = $db->fetch_array($yeet))
+		{
+			$groups[] = format_name(htmlspecialchars_uni($group['title']), $group['gid']);
+		}*/
+
+		while ($group = $db->fetch_array($groupsThatCanManageFavoritesQuery))
+		{
+			$gId = $group['gid'];
+
+			$groupQuery = $db->write_query("SELECT title, gid FROM `" . TABLE_PREFIX . "usergroups` WHERE gid=$gId");
+
+			while ($group = $db->fetch_array($groupQuery))
+			{
+				$groups[] = format_name(htmlspecialchars_uni($group['title']), $group['gid']);
+			}
+		}
+
+		$groupsThatCanManageFavorites = implode(', ', $groups);
+	}
+	else
+	{
+		$groupsThatCanManageFavorites = $lang->none_favorite_groups;
+	}
+
 	$table = new Table;
 	$table->construct_header($lang->medal_setting, array("colspan" => 2));
 	$table->construct_header($lang->medal_value, array("colspan" => 2));
@@ -1031,6 +1085,9 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->medals_plugin_activated_member}</strong>", array("colspan" => 2));
 	$table->construct_cell($activationUsername ?? $lang->medals_plugin_activate_unknown, array("colspan" => 2));
+	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->allowed_favorite_groups}</strong>", array("colspan" => 2));
+	$table->construct_cell($groupsThatCanManageFavorites, array("colspan" => 2));
 	$table->construct_row();
 	$table->output($lang->medal_settings);
 	$page->output_footer();
