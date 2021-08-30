@@ -103,8 +103,8 @@ if ($mybb->input['action'] == "add")
 
 			$medal = $db->insert_query("medals", $new_medal);
 
-			/*			// Log admin action
-						log_admin_action($utid, $mybb->input['title'], $mybb->input['posts']);*/
+			//Log admin action
+			log_admin_action($medal, $mybb->input['title']);
 
 			flash_message($lang->medal_created, 'success');
 			admin_redirect("index.php?module=user-medals");
@@ -171,7 +171,7 @@ if ($mybb->input['action'] == "edit")
 			$db->update_query("medals", $updated_title, "medal_id='{$medal['medal_id']}'");
 
 			// Log admin action
-			//log_admin_action($medal['medal_id'], $mybb->input['medal_name'], $mybb->input['medal_image_path']);
+			log_admin_action($medal['medal_id'], $mybb->input['medal_name']);
 
 			flash_message($lang->success_medal_updated, 'success');
 			admin_redirect("index.php?module=user-medals");
@@ -231,7 +231,7 @@ if ($mybb->input['action'] == "delete")
 		$db->delete_query("medals_user", "medal_id='{$medal['medal_id']}'");
 
 		// Log admin action
-		//log_admin_action($medal['medal_id'], $medal['medal_name']);
+		log_admin_action($medal['medal_id'], $medal['medal_name']);
 
 		flash_message($lang->success_medal_deleted, 'success');
 		admin_redirect("index.php?module=user-medals");
@@ -298,12 +298,10 @@ if ($mybb->input['action'] == "assign")
 				'created_at'    => TIME_NOW,
 			);
 
-			//print_r($assign_medal);
-
 			$medal = $db->insert_query("medals_user", $assign_medal);
 
-			/*			// Log admin action
-						log_admin_action($utid, $mybb->input['title'], $mybb->input['posts']);*/
+			// Log admin action
+			log_admin_action($mybb->input['medal'], $db->fetch_field($db->simple_select("medals", "medal_name", "medal_id={$mybb->input['medal']}"), 'medal_name'), $user['username'], $user['uid']);
 
 			flash_message($lang->success_medal_assigned, 'success');
 			admin_redirect("index.php?module=user-medals&amp;action=members");
@@ -487,11 +485,11 @@ if ($mybb->input['action'] == "members")
 
 if ($mybb->input['action'] == "revoke")
 {
-	$query = $db->simple_select("medals_user", "medal_user_id", "medal_user_id='" . $mybb->get_input('id', MyBB::INPUT_INT) . "'");
+	$query = $db->simple_select("medals_user", "medal_user_id, user_id, medal_id", "medal_user_id='" . $mybb->get_input('id', MyBB::INPUT_INT) . "'");
 	$medalUser = $db->fetch_array($query);
 
 	// refactor this into an inner join with ^^ above query
-	$medalQuery = $db->simple_select("medals", "medal_id", "medal_id='" . $mybb->get_input('medal_id', MyBB::INPUT_INT) . "'");
+	$medalQuery = $db->simple_select("medals", "medal_name", "medal_id='" . $mybb->get_input('medal_id', MyBB::INPUT_INT) . "'");
 	$medal = $db->fetch_array($medalQuery);
 
 	$userId = $mybb->get_input('id', MyBB::INPUT_INT);
@@ -533,6 +531,9 @@ if ($mybb->input['action'] == "revoke")
 			$db->delete_query("medals_user_favorite", "medal_user_id='" . (int) $medalUser['medal_user_id'] . "' AND medal_id='" . (int) $medal['medal_id']);
 		}
 
+		// log admin action
+		log_admin_action($medalUser['medal_id'], $db->fetch_field($db->simple_select("medals", "medal_name", "medal_id={$medalUser['medal_id']}"), 'medal_name'), $db->fetch_field($db->simple_select("users", "username", "uid={$medalUser['user_id']}"), 'username'), $medalUser['user_id']);
+
 		flash_message($lang->success_medal_revoked, 'success');
 		admin_redirect("index.php?module=user-medals&amp;action=members");
 	}
@@ -562,6 +563,9 @@ if ($mybb->input['action'] == "editreason")
 			);
 
 			$db->update_query("medals_user", $updatedReason, "medal_user_id='{$medalUser['medal_user_id']}'");
+
+			// log admin action
+			log_admin_action($medalUser['medal_id'], $db->fetch_field($db->simple_select("medals", "medal_name", "medal_id={$medalUser['medal_id']}"), 'medal_name'), $db->fetch_field($db->simple_select("users", "username", "uid={$medalUser['user_id']}"), 'username'), $medalUser['user_id'], $mybb->input['reason']);
 
 			flash_message($lang->success_reason_updated, 'success');
 			admin_redirect("index.php?module=user-medals&amp;action=members");

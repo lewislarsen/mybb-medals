@@ -69,6 +69,9 @@ if (defined('IN_ADMINCP'))
 	$plugins->add_hook('admin_config_settings_change', 'medal_settings');
 	$plugins->add_hook('admin_config_settings_start', 'medal_settings');
 	// We could hook at 'admin_config_settings_begin' only for simplicity sake.
+
+	$plugins->add_hook("admin_tools_adminlog_begin", "medals_admin_tools_adminlog_begin");
+	$plugins->add_hook("admin_tools_get_admin_log_action", "medals_admin_tools_get_admin_log_action");
 }
 
 function medals_info()
@@ -766,7 +769,7 @@ function medals_usercp()
 		verify_post_check($mybb->get_input('my_post_key'));
 
 		// if no checkboxes selected
-		if(!isset($mybb->input['medals']) || !is_array($mybb->get_input('medals', MyBB::INPUT_ARRAY)))
+		if (!isset($mybb->input['medals']) || !is_array($mybb->get_input('medals', MyBB::INPUT_ARRAY)))
 		{
 			error($lang->no_medals_selected);
 		}
@@ -851,5 +854,32 @@ function medals_usercp_menu()
 	if ($mybb->usergroup['canmanagefavoritemedals'])
 	{
 		eval("\$usercpmenu .= \"" . $templates->get('medal_usercp_menu') . "\";");
+	}
+}
+
+function medals_admin_tools_adminlog_begin()
+{
+	global $lang;
+
+	$lang->load("medals");
+}
+
+function medals_admin_tools_get_admin_log_action(&$plugin_array)
+{
+	global $mybb, $db, $logitem;
+
+	if ($plugin_array['logitem']['module'] == "user-medals")
+	{
+		$plugin_array['lang_string'] = match ($plugin_array['logitem']['action'])
+		{
+			"add" => "admin_log_medals_action_add",
+			"edit" => "admin_log_medals_action_edit",
+			"delete" => "admin_log_medals_action_delete",
+			"assign" => "admin_log_medals_action_assign",
+			"revoke" => "admin_log_medals_action_revoke",
+			"editreason" => "admin_log_medals_action_editreason",
+		};
+
+		return $plugin_array;
 	}
 }

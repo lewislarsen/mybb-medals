@@ -101,3 +101,11 @@ $l['setting_medal_display6'] = 'Enable Admin Avatars in Members Table';
 $l['setting_medal_display6_desc'] = 'Set to no if you do not want admin avatars to appear in the Members table of the Medals system.';
 $l['can_manage_favorite_medals'] = 'Manage favorite medals';
 $l['favorite_medals'] = 'Favorite medals';
+
+// admin log entries
+$l['admin_log_medals_action_add'] = "Added medal #{1} ({2})";
+$l['admin_log_medals_action_edit'] = "Edited medal #{1} ({2})";
+$l['admin_log_medals_action_delete'] = "Deleted medal #{1} ({2})";
+$l['admin_log_medals_action_assign'] = "Assigned medal #{1} ({2}) to member #{4} ({3})";
+$l['admin_log_medals_action_revoke'] = "Revoked medal #{1} ({2}) from member #{4} ({3})";
+$l['admin_log_medals_action_editreason'] = "Edited medal #{1} ({2}) reason ({5}) for member #{4} ({3})";
