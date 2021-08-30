@@ -45,14 +45,93 @@ if (!$mybb->input['action'])
 	$page->output_header($lang->medals);
 	$page->output_nav_tabs($sub_tabs, 'medals');
 
+	//
+	// START PAGINATION & SORTING
+	//
+	if ($mybb->get_input("page"))
+	{
+		$activePage = $mybb->get_input("page", MyBB::INPUT_INT);
+	}
+	else
+	{
+		$activePage = 1;
+	}
+
+	// Grab the amount of pages!
+	$query = $db->simple_select("medals", "COUNT(medal_id) as medalCount");
+	$items = $db->fetch_field($query, "medalCount");
+
+	$itemsPerPage = "20";
+
+	$pages = ceil($items / $itemsPerPage);
+
+	if ($activePage > $pages)
+	{
+		$activePage = $pages;
+	}
+	if ($activePage < 1)
+	{
+		$activePage = 1;
+	}
+
+	$start = $activePage * $itemsPerPage - $itemsPerPage;
+
+	if ($mybb->get_input("dir"))
+	{
+		$direction = match ($mybb->get_input("dir"))
+		{
+			"a" => "ASC",
+			"d" => "DESC",
+			default => "DESC"
+		};
+	}
+	else
+	{
+		$direction = "DESC";
+	}
+
+	// switch the direction
+	$switchDir = $mybb->get_input("dir") == 'a' ? 'd' : 'a';
+
+	if ($mybb->get_input("order"))
+	{
+		$sortQuery = " ORDER BY ";
+		$orderInput = $mybb->get_input("order");
+		$sortQuery .= match ($orderInput)
+		{
+			"time" => "created_at $direction",
+			"description" => "medal_description $direction",
+			"name" => "medal_name $direction",
+			"image" => "medal_image_path $direction",
+			default => "medal_id $direction",
+		};
+	}
+	else
+	{
+		$sortQuery = " ORDER BY medal_id $direction";
+		$orderInput = "time";
+	}
+
+	$generatePagination = draw_admin_pagination($activePage, $itemsPerPage, $items, "index.php?module=user-medals&order=" . $orderInput . '&dir=' . $switchDir);
+	echo $generatePagination;
+
+	//
+	// END PAGINATION & SORTING
+	//
+
+	$baseURL = "index.php?module=user-medals&dir=$switchDir";
+
 	$table = new Table;
-	$table->construct_header($lang->medal_name);
-	$table->construct_header($lang->medal_description);
-	$table->construct_header($lang->medal_image, array('width' => '250', 'class' => 'align_center'));
-	$table->construct_header($lang->medal_created_at, array('width' => '200', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=name'>$lang->medal_name</a>");
+	$table->construct_header("<a href='$baseURL&order=description'>$lang->medal_description</a>");
+	$table->construct_header("<a href='$baseURL&order=image'>$lang->medal_image</a>", array('width' => '250', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=time'>$lang->medal_created_at</a>", array('width' => '200', 'class' => 'align_center'));
 	$table->construct_header($lang->controls, array("class" => "align_center", "colspan" => 2, "width" => 200));
 
-	$query = $db->simple_select("medals", "*", "");
+	$query = $db->write_query("
+	SELECT *
+	FROM `" . TABLE_PREFIX . "medals`
+	" . $sortQuery . " LIMIT " . ' ' . $start . ",$itemsPerPage");
 	while ($medal = $db->fetch_array($query))
 	{
 		$medal['medal_name'] = htmlspecialchars_uni($medal['medal_name']);
@@ -72,7 +151,9 @@ if (!$mybb->input['action'])
 		$no_results = true;
 	}
 
-	$table->output($lang->medals);
+	$table->output("<a href='$baseURL'>$lang->medals</a>");
+
+	echo $generatePagination;
 
 	$page->output_footer();
 }
@@ -394,21 +475,99 @@ if ($mybb->input['action'] == "members")
 	$page->output_header($lang->medals . " - " . $lang->medals_user);
 	$page->output_nav_tabs($sub_tabs, 'users_medals');
 
+	//
+	// START PAGINATION & SORTING
+	//
+	if ($mybb->get_input("page"))
+	{
+		$activePage = $mybb->get_input("page", MyBB::INPUT_INT);
+	}
+	else
+	{
+		$activePage = 1;
+	}
+
+	// Grab the amount of pages!
+	$query = $db->simple_select("medals_user mu", "COUNT(medal_user_id) as memberCount");
+	$items = $db->fetch_field($query, "memberCount");
+
+	$itemsPerPage = "10";
+
+	$pages = ceil($items / $itemsPerPage);
+
+	if ($activePage > $pages)
+	{
+		$activePage = $pages;
+	}
+	if ($activePage < 1)
+	{
+		$activePage = 1;
+	}
+
+	$start = $activePage * $itemsPerPage - $itemsPerPage;
+
+	if ($mybb->get_input("dir"))
+	{
+		$direction = match ($mybb->get_input("dir"))
+		{
+			"a" => "ASC",
+			"d" => "DESC",
+			default => "DESC"
+		};
+	}
+	else
+	{
+		$direction = "DESC";
+	}
+
+	// switch the direction
+	$switchDir = $mybb->get_input("dir") == 'a' ? 'd' : 'a';
+
+	if ($mybb->get_input("order"))
+	{
+		$sortQuery = " ORDER BY ";
+		$orderInput = $mybb->get_input("order");
+		$sortQuery .= match ($orderInput)
+		{
+			"member" => "member_username $direction",
+			"assignee" => "admin_username $direction",
+			"time" => "assigned_at $direction",
+			"reason" => "reason $direction",
+			"medal" => "medal_id $direction",
+			"image" => "medal_image_path $direction",
+			default => "id $direction",
+		};
+	}
+	else
+	{
+		$sortQuery = " ORDER BY id $direction";
+		$orderInput = "time";
+	}
+
+	$generatePagination = draw_admin_pagination($activePage, $itemsPerPage, $items, "index.php?module=user-medals&action=members&order=" . $orderInput . '&dir=' . $switchDir);
+	echo $generatePagination;
+
+	//
+	// END PAGINATION & SORTING
+	//
+
+	$baseURL = "index.php?module=user-medals&action=members&dir=$switchDir";
+
 	$table = new Table;
 	if ($mybb->settings['medal_display5'])
 	{
 		$table->construct_header($lang->medal_user_avatar, array('width' => '90', 'class' => 'align_center'));
 	}
-	$table->construct_header($lang->medal_user, array('width' => '150', 'class' => 'align_center'));
-	$table->construct_header($lang->medal, array('width' => '200', 'class' => 'align_center'));
-	$table->construct_header($lang->medal_image, array('width' => '200', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=member'>$lang->medal_user</a>", array('width' => '150', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=medal'>$lang->medal</a>", array('width' => '200', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=image'>$lang->medal_image</a>", array('width' => '200', 'class' => 'align_center'));
 	if ($mybb->settings['medal_display6'])
 	{
 		$table->construct_header($lang->medal_admin_avatar, array('width' => '90', 'class' => 'align_center'));
 	}
-	$table->construct_header($lang->medal_assigned_by, array('width' => '150', 'class' => 'align_center'));
-	$table->construct_header($lang->medal_reason, array('width' => '250', 'class' => 'align_center'));
-	$table->construct_header($lang->medal_assigned_at, array('width' => '200', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=assignee'>$lang->medal_assigned_by</a>", array('width' => '150', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=reason'>$lang->medal_reason</a>", array('width' => '250', 'class' => 'align_center'));
+	$table->construct_header("<a href='$baseURL&order=time'>$lang->medal_assigned_at</a>", array('width' => '200', 'class' => 'align_center'));
 	$table->construct_header($lang->controls, array("class" => "align_center", "colspan" => 2, "width" => 200));
 
 	$query = $db->write_query("
@@ -439,8 +598,7 @@ if ($mybb->input['action'] == "members")
 	    LEFT JOIN `" . TABLE_PREFIX . "users` 
 	        AS a
 	        ON medu.admin_user_id = a.uid
-	ORDER BY medu.medal_user_id DESC
-	");
+	    " . $sortQuery . " LIMIT " . ' ' . $start . ",$itemsPerPage");
 
 	while ($member_medal = $db->fetch_array($query))
 	{
@@ -458,7 +616,7 @@ if ($mybb->input['action'] == "members")
 		}
 		$table->construct_cell("<strong>{$memberUsername}</strong>", array("class" => "align_center"));
 		$table->construct_cell("{$member_medal['medal_name']}", array("class" => "align_center"));
-		$table->construct_cell("<img style='width:30px;height:auto;' src=\"{$mybb->settings['bburl']}/{$member_medal['medal_image_path']}\" />", array("class" => "align_center"));
+		$table->construct_cell("<img style='width:20px;height:auto;' src=\"{$mybb->settings['bburl']}/{$member_medal['medal_image_path']}\" />", array("class" => "align_center"));
 		if ($mybb->settings['medal_display6'])
 		{
 			$table->construct_cell("<img src=\"" . $adminAvatar['image'] . "\" alt=\"\" {$adminAvatar['width_height']} />", array("class" => "align_center"));
@@ -478,7 +636,9 @@ if ($mybb->input['action'] == "members")
 		$no_results = true;
 	}
 
-	$table->output($lang->medals_user);
+	$table->output("<a href='$baseURL'>$lang->medals_user</a>");
+
+	echo $generatePagination;
 
 	$page->output_footer();
 }
