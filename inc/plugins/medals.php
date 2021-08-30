@@ -79,7 +79,7 @@ function medals_info()
 		"website"       => "",
 		"author"        => "Lewis Larsen",
 		"authorsite"    => "https://lewislarsen.codes",
-		"version"       => "1.2",
+		"version"       => "1.2.10",
 		"guid"          => "",
 		"codename"      => "medals",
 		"compatibility" => "*",
@@ -203,7 +203,7 @@ function medals_activate()
 		'favorite_row'              => '<tr>
 <td class="trow1">{$name}</td>
 <td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
-<td class="trow1" align="center"><input type="checkbox" value="{$id}" name="medal" {$checked} /></td>
+<td class="trow1" align="center"><input type="checkbox" name="medals[{$id}]" value="{$id}" {$checked} /></td>
 </tr>',
 		'usercp_favoritemedals'     => '<html>
 <head>
@@ -766,7 +766,7 @@ function medals_usercp()
 		verify_post_check($mybb->get_input('my_post_key'));
 
 		// if no checkboxes selected
-		if (!($mybb->get_input('medals', MyBB::INPUT_ARRAY)) || !is_array($mybb->get_input('medals', MyBB::INPUT_ARRAY)))
+		if(!isset($mybb->input['medals']) || !is_array($mybb->get_input('medals', MyBB::INPUT_ARRAY)))
 		{
 			error($lang->no_medals_selected);
 		}

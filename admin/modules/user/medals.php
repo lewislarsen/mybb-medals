@@ -53,7 +53,6 @@ if (!$mybb->input['action'])
 	$table->construct_header($lang->controls, array("class" => "align_center", "colspan" => 2, "width" => 200));
 
 	$query = $db->simple_select("medals", "*", "");
-
 	while ($medal = $db->fetch_array($query))
 	{
 		$medal['medal_name'] = htmlspecialchars_uni($medal['medal_name']);
