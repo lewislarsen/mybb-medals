@@ -440,6 +440,10 @@ function medals_activate()
 			'optionscode' => 'yesno',
 			'value'       => 1,
 		),
+		'display7' => array(
+			'optionscode' => 'yesno',
+			'value'       => 1,
+		),
 	);
 
 	$disporder = 0;

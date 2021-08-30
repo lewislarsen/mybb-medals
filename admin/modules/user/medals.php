@@ -863,7 +863,10 @@ if ($mybb->input['action'] == "statistics")
 	$table = new Table;
 	$table->construct_header($lang->member_ranking, array('width' => '100', 'class' => 'align_center'));
 	$table->construct_header($lang->medal_count, array('width' => '100', 'class' => 'align_center'));
-	$table->construct_header($lang->medal_user_avatar, array('width' => '100', 'class' => 'align_center'));
+	if ($mybb->settings['medal_display7'])
+	{
+		$table->construct_header($lang->medal_user_avatar, array('width' => '100', 'class' => 'align_center'));
+	}
 	$table->construct_header($lang->medal_user, array('width' => '200', 'class' => 'align_center'));
 	$table->construct_header($lang->member_joined_at, array('width' => '150', 'class' => 'align_center'));
 	$table->construct_header($lang->member_last_active, array('width' => '150', 'class' => 'align_center'));
@@ -899,7 +902,10 @@ if ($mybb->input['action'] == "statistics")
 
 		$table->construct_cell("<strong>$ranking</strong>", array('class' => 'align_center'));
 		$table->construct_cell("$topMedalCount", array('class' => 'align_center'));
-		$table->construct_cell("<img src=\"" . $topMemberAvatar['image'] . "\" alt=\"\" {$topMemberAvatar['width_height']} />", array("class" => "align_center"));
+		if ($mybb->settings['medal_display7'])
+		{
+			$table->construct_cell("<img src=\"" . $topMemberAvatar['image'] . "\" alt=\"\" {$topMemberAvatar['width_height']} />", array("class" => "align_center"));
+		}
 		$table->construct_cell($topMemberUsername, array('class' => 'align_center'));
 		$table->construct_cell($topMemberRegDate, array('class' => 'align_center'));
 		$table->construct_cell($topMemberLastActive, array('class' => 'align_center'));
@@ -908,7 +914,7 @@ if ($mybb->input['action'] == "statistics")
 
 	if ($table->num_rows() == 0)
 	{
-		$table->construct_cell($lang->member_medal_rankings_none, array('colspan' => 6));
+		$table->construct_cell($lang->member_medal_rankings_none, array('colspan' => 10));
 		$table->construct_row();
 		$no_results = true;
 	}
@@ -921,6 +927,7 @@ if ($mybb->input['action'] == "statistics")
 	$medalsPageSetting = $mybb->settings['medal_display3'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
 	$membersAvatarsSetting = $mybb->settings['medal_display5'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
 	$adminAvatarsSetting = $mybb->settings['medal_display6'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
+	$statisticsPageAvatarsSetting = $mybb->settings['medal_display7'] ? "<span style=\"color: green;\">$lang->medal_setting_enabled</span>" : "<span style=\"color: #C00\">{$lang->medal_setting_disabled}</span>";
 
 	// get the group page option
 	if ($mybb->settings['medal_display4'] == '-1')
@@ -1007,6 +1014,9 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_cell("<strong>{$lang->setting_medal_display6}</strong>", array("colspan" => 2));
 	$table->construct_cell($adminAvatarsSetting, array("colspan" => 2));
 	$table->construct_row();
+	$table->construct_cell("<strong>{$lang->setting_medal_display7}</strong>", array("colspan" => 2));
+	$table->construct_cell($statisticsPageAvatarsSetting, array("colspan" => 2));
+	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->setting_medal_limit1}</strong>", array("colspan" => 2));
 	$table->construct_cell($mybb->settings['medal_limit1'] . ' ' . $lang->medals, array("colspan" => 2));
 	$table->construct_row();
@@ -1017,10 +1027,10 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_cell($medalsPageGroupSetting, array("colspan" => 2));
 	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->medals_plugin_activated}</strong>", array("colspan" => 2));
-	$table->construct_cell($activationDate, array("colspan" => 2));
+	$table->construct_cell($activationDate ?? $lang->medals_plugin_activate_unknown, array("colspan" => 2));
 	$table->construct_row();
 	$table->construct_cell("<strong>{$lang->medals_plugin_activated_member}</strong>", array("colspan" => 2));
-	$table->construct_cell($activationUsername, array("colspan" => 2));
+	$table->construct_cell($activationUsername ?? $lang->medals_plugin_activate_unknown, array("colspan" => 2));
 	$table->construct_row();
 	$table->output($lang->medal_settings);
 	$page->output_footer();

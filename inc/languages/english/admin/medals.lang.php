@@ -99,6 +99,8 @@ $l['setting_medal_display5'] = 'Enable Member Avatars in Members Table';
 $l['setting_medal_display5_desc'] = 'Set to no if you do not want member avatars to appear in the Members table of the Medals system.';
 $l['setting_medal_display6'] = 'Enable Admin Avatars in Members Table';
 $l['setting_medal_display6_desc'] = 'Set to no if you do not want admin avatars to appear in the Members table of the Medals system.';
+$l['setting_medal_display7'] = 'Enable Avatars on the Statistics Page';
+$l['setting_medal_display7_desc'] = 'Set to no if you do not want avatars to appear on the statistics page of the Medals system.';
 $l['can_manage_favorite_medals'] = 'Manage favorite medals';
 $l['favorite_medals'] = 'Favorite medals';
 
