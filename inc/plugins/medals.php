@@ -91,7 +91,7 @@ function medals_info()
 		"website"       => "",
 		"author"        => "Lewis Larsen",
 		"authorsite"    => "https://lewislarsen.codes",
-		"version"       => "1.3",
+		"version"       => "1.4",
 		"guid"          => "",
 		"codename"      => "medals",
 		"compatibility" => "*",
