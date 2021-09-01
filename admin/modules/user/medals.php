@@ -1,6 +1,6 @@
 <?php
 
-require_once (MYBB_ROOT.'inc/functions_medals.php');
+require_once(MYBB_ROOT . 'inc/functions_medals.php');
 
 global $page, $mybb, $lang, $errors, $db, $settings, $cache;
 
@@ -348,7 +348,7 @@ if ($mybb->input['action'] == "assign")
 	}
 
 	// if there's no medals, redirect the user
-	if($db->num_rows($query) == 0)
+	if ($db->num_rows($query) == 0)
 	{
 		flash_message($lang->create_medal_notice, 'error');
 		admin_redirect("index.php?module=user-medals");
@@ -1045,7 +1045,7 @@ if ($mybb->input['action'] == "statistics")
 	$table->construct_cell("$favoriteCount", array('width' => '200'));
 	$table->construct_row();
 
-	$table->output($lang->statistics);
+	$table->output("<span style=\"float: right;\"><small><a href=\"index.php?module=user-medals&amp;action=cache_rebuild\">{$lang->rebuild_medals_cache}</a></small></span>{$lang->statistics}");
 
 	$table = new Table;
 	$table->construct_header($lang->member_ranking, array('width' => '100', 'class' => 'align_center'));
@@ -1282,4 +1282,17 @@ if ($mybb->input['action'] == "statistics")
 	$table->output($lang->plugin_details);
 
 	$page->output_footer();
+}
+
+if ($mybb->input['action'] == "cache_rebuild")
+{
+	// rebuild cache
+	rebuild_medals_cache();
+
+	//Log admin action
+	log_admin_action();
+
+	flash_message($lang->cache_rebuilt_successfully, 'success');
+
+	admin_redirect("index.php?module=user-medals&amp;action=statistics");
 }

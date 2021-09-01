@@ -114,6 +114,10 @@ $l['admin_log_medals_action_delete'] = "Deleted medal #{1} ({2})";
 $l['admin_log_medals_action_assign'] = "Assigned medal #{1} ({2}) to member #{4} ({3})";
 $l['admin_log_medals_action_revoke'] = "Revoked medal #{1} ({2}) from member #{4} ({3})";
 $l['admin_log_medals_action_editreason'] = "Edited medal #{1} ({2}) reason ({5}) for member #{4} ({3})";
-
+$l['admin_log_medals_action_cache_rebuild'] = "Rebuilt the medal cache";
 // plugin details
 $l['plugin_details'] = "Plugin Details";
+
+// cache
+$l['rebuild_medals_cache'] = "Rebuild Medal Cache";
+$l['cache_rebuilt_successfully'] = "The medal cache has been successfully rebuilt.";

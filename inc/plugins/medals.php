@@ -942,6 +942,7 @@ function medals_admin_tools_get_admin_log_action(&$plugin_array)
 			"assign" => "admin_log_medals_action_assign",
 			"revoke" => "admin_log_medals_action_revoke",
 			"editreason" => "admin_log_medals_action_editreason",
+			"cache_rebuild" => "admin_log_medals_action_cache_rebuild",
 		};
 
 		return $plugin_array;
