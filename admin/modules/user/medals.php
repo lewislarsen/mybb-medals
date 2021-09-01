@@ -148,7 +148,7 @@ if (!$mybb->input['action'])
 
 	if ($table->num_rows() == 0)
 	{
-		$table->construct_cell($lang->medals_none, array('colspan' => 3));
+		$table->construct_cell($lang->medals_none, array('colspan' => 5));
 		$table->construct_row();
 		$no_results = true;
 	}
