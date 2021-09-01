@@ -40,3 +40,4 @@ $l['clear_favorite_medals'] = "Clear Favorite Medals";
 $l['favorite_medals_cleared'] = "Your favorite medals have been cleared.";
 $l['no_medals_found_clear'] = "You need medals added to your favorites to clear them.";
 $l['no_medals_added'] = "No medals have been added yet.";
+$l['medal_creation_date'] = "Medal created";

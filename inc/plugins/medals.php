@@ -310,7 +310,7 @@ function medals_activate()
 		<tr>
 			<td class="tcat" align="center"><span class="smalltext"><strong>{$lang->medal}</strong></span></td>
 			<td class="tcat" align="center"><span class="smalltext"><strong>{$lang->description}</strong></span></td>
-			<td class="tcat" width="50%"><span class="smalltext"><strong>{$lang->date}</strong></span></td>
+			<td class="tcat" align="center"><span class="smalltext"><strong>{$lang->medal_creation_date}</strong></span></td>
 		</tr>
 		{$medalRows}
 		{$medalRowsNone}
@@ -320,7 +320,7 @@ function medals_activate()
 </body>
 </html>',
 		'medal_page_row'               => '<tr>
-<td class="trow1">{$name}</td>
+<td class="trow1" align="center">{$name}</td>
 <td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
 <td class="trow1" align="center">{$date}</td>
 </tr>',
