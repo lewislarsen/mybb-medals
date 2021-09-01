@@ -1,6 +1,8 @@
 <?php
 
-global $page, $mybb, $lang, $errors, $db, $settings;
+require_once (MYBB_ROOT.'inc/functions_medals.php');
+
+global $page, $mybb, $lang, $errors, $db, $settings, $cache;
 
 if (!defined("IN_MYBB"))
 {
@@ -58,8 +60,7 @@ if (!$mybb->input['action'])
 	}
 
 	// Grab the amount of pages!
-	$query = $db->simple_select("medals", "COUNT(medal_id) as medalCount");
-	$items = $db->fetch_field($query, "medalCount");
+	$items = count($cache->read('medals'));
 
 	$itemsPerPage = "20";
 
@@ -184,6 +185,9 @@ if ($mybb->input['action'] == "add")
 
 			$medal = $db->insert_query("medals", $new_medal);
 
+			// rebuild cache
+			rebuild_medals_cache();
+
 			//Log admin action
 			log_admin_action($medal, $mybb->input['title']);
 
@@ -251,6 +255,9 @@ if ($mybb->input['action'] == "edit")
 
 			$db->update_query("medals", $updated_title, "medal_id='{$medal['medal_id']}'");
 
+			// rebuild cache
+			rebuild_medals_cache();
+
 			// Log admin action
 			log_admin_action($medal['medal_id'], $mybb->input['medal_name']);
 
@@ -311,6 +318,11 @@ if ($mybb->input['action'] == "delete")
 		$db->delete_query("medals", "medal_id='{$medal['medal_id']}'");
 		$db->delete_query("medals_user", "medal_id='{$medal['medal_id']}'");
 		$db->delete_query("medals_user_favorite", "medal_id='{$medal['medal_id']}'");
+
+		// rebuild cache
+		rebuild_medals_cache();
+		rebuild_medals_user_cache();
+		rebuild_medals_user_favorite_cache();
 
 		// Log admin action
 		log_admin_action($medal['medal_id'], $medal['medal_name']);
@@ -381,6 +393,9 @@ if ($mybb->input['action'] == "assign")
 			);
 
 			$medal = $db->insert_query("medals_user", $assign_medal);
+
+			// rebuild cache
+			rebuild_medals_user_cache();
 
 			// Log admin action
 			log_admin_action($mybb->input['medal'], $db->fetch_field($db->simple_select("medals", "medal_name", "medal_id={$mybb->input['medal']}"), 'medal_name'), $user['username'], $user['uid']);
@@ -489,8 +504,7 @@ if ($mybb->input['action'] == "members")
 	}
 
 	// Grab the amount of pages!
-	$query = $db->simple_select("medals_user mu", "COUNT(medal_user_id) as memberCount");
-	$items = $db->fetch_field($query, "memberCount");
+	$items = count($cache->read('medals_user'));
 
 	$itemsPerPage = "10";
 
@@ -692,6 +706,10 @@ if ($mybb->input['action'] == "revoke")
 			$db->delete_query("medals_user_favorite", "medal_user_id='" . (int) $medalUser['medal_user_id'] . "' AND medal_id='" . (int) $medal['medal_id']);
 		}
 
+		// rebuild cache
+		rebuild_medals_user_cache();
+		rebuild_medals_user_favorite_cache();
+
 		// log admin action
 		log_admin_action($medalUser['medal_id'], $db->fetch_field($db->simple_select("medals", "medal_name", "medal_id={$medalUser['medal_id']}"), 'medal_name'), $db->fetch_field($db->simple_select("users", "username", "uid={$medalUser['user_id']}"), 'username'), $medalUser['user_id']);
 
@@ -724,6 +742,9 @@ if ($mybb->input['action'] == "editreason")
 			);
 
 			$db->update_query("medals_user", $updatedReason, "medal_user_id='{$medalUser['medal_user_id']}'");
+
+			// rebuild cache
+			rebuild_medals_user_cache();
 
 			// log admin action
 			log_admin_action($medalUser['medal_id'], $db->fetch_field($db->simple_select("medals", "medal_name", "medal_id={$medalUser['medal_id']}"), 'medal_name'), $db->fetch_field($db->simple_select("users", "username", "uid={$medalUser['user_id']}"), 'username'), $medalUser['user_id'], $mybb->input['reason']);
@@ -763,22 +784,17 @@ if ($mybb->input['action'] == "editreason")
 
 if ($mybb->input['action'] == "statistics")
 {
+	//
+	// THIS PAGE DOES WAY TOO MANY QUERIES! (26 AT LAST CHECK)
+	// AS WE'VE CACHED ALL THREE TABLES NOW, REDUCE SOME OF THESE QUERIES SOON!
+	//
+
 	$page->add_breadcrumb_item($lang->statistics);
 	$page->output_header($lang->medals . " - " . $lang->statistics);
 	$page->output_nav_tabs($sub_tabs, 'statistics');
 
 	// medal count
-	$medalCountQuery = $db->write_query("
-	SELECT COUNT(medal_id) as count FROM `" . TABLE_PREFIX . "medals`");
-
-	if ($db->num_rows($medalCountQuery) == 0)
-	{
-		$medalCount = 0;
-	}
-	else
-	{
-		$medalCount = $db->fetch_field($medalCountQuery, 'count');
-	}
+	$medalCount = count($cache->read('medals'));
 
 	// most awarded medal
 	$mostAwardedMedalQuery = $db->write_query("
@@ -983,17 +999,7 @@ if ($mybb->input['action'] == "statistics")
 	}
 
 	// favorite count
-	$favoriteCountQuery = $db->write_query("
-	SELECT COUNT(medals_user_favorite_id) as count FROM `" . TABLE_PREFIX . "medals_user_favorite`");
-
-	if ($db->num_rows($favoriteCountQuery) == 0)
-	{
-		$favoriteCount = 0;
-	}
-	else
-	{
-		$favoriteCount = $db->fetch_field($favoriteCountQuery, 'count');
-	}
+	$favoriteCount = count($cache->read('medals_user_favorite'));
 
 	$table = new Table;
 	$table->construct_header($lang->medal_statistics, array("colspan" => 2));

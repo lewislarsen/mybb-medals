@@ -1,6 +1,8 @@
 <?php
 ini_set('display_errors', 1);
 
+require_once(MYBB_ROOT . 'inc/functions_medals.php');
+
 // Disallow direct access to this file for security reasons
 if (!defined("IN_MYBB"))
 {
@@ -61,6 +63,8 @@ $plugins->add_hook("admin_user_groups_edit_commit", "medals_usergroup_permission
 
 $plugins->add_hook("usercp_start", "medals_usercp");
 $plugins->add_hook('usercp_menu', 'medals_usercp_menu', 40);
+
+$plugins->add_hook("admin_tools_cache_rebuild", "medals_admin_tools_cache_rebuild");
 
 if (defined('IN_ADMINCP'))
 {
@@ -172,6 +176,20 @@ function medals_uninstall()
 	if ($db->field_exists("canmanagefavoritemedals", "usergroups"))
 	{
 		$db->drop_column("usergroups", "canmanagefavoritemedals");
+	}
+
+	// delete caches
+	if ($db->num_rows($db->write_query("SELECT title FROM `" . TABLE_PREFIX . "datacache` WHERE title='medals'")) == 1)
+	{
+		$db->write_query("DELETE FROM `" . TABLE_PREFIX . "datacache` WHERE title='medals'");
+	}
+	if ($db->num_rows($db->write_query("SELECT title FROM `" . TABLE_PREFIX . "datacache` WHERE title='medals_user'")) == 1)
+	{
+		$db->write_query("DELETE FROM `" . TABLE_PREFIX . "datacache` WHERE title='medals_user'");
+	}
+	if ($db->num_rows($db->write_query("SELECT title FROM `" . TABLE_PREFIX . "datacache` WHERE title='medals_user_favorite'")) == 1)
+	{
+		$db->write_query("DELETE FROM `" . TABLE_PREFIX . "datacache` WHERE title='medals_user_favorite'");
 	}
 }
 
@@ -812,6 +830,9 @@ function medals_usercp()
 				INSERT INTO `" . TABLE_PREFIX . "medals_user_favorite` (user_id, medal_id, updated_at)
 				VALUES ($user, $id, $dateline)");
 			}
+
+			// rebuild cache
+			rebuild_medals_user_favorite_cache();
 		}
 		redirect("usercp.php?action=favoritemedals", $lang->favorite_medals_updated, $lang->manage_favorite_medals, true);
 	}
@@ -843,6 +864,9 @@ function medals_usercp()
 		else
 		{
 			$db->delete_query('medals_user_favorite', "user_id = $user");
+
+			// rebuild cache
+			rebuild_medals_user_favorite_cache();
 		}
 
 		redirect("usercp.php?action=favoritemedals", $lang->favorite_medals_cleared, $lang->manage_favorite_medals, true);
@@ -886,4 +910,13 @@ function medals_admin_tools_get_admin_log_action(&$plugin_array)
 
 		return $plugin_array;
 	}
+}
+
+// rebuilds all medal caches when user clicks "Rebuild & Reload All" from the Cache Manager in ACP.
+function medals_admin_tools_cache_rebuild()
+{
+	// rebuild our caches too!
+	rebuild_medals_user_favorite_cache();
+	rebuild_medals_user_cache();
+	rebuild_medals_cache();
 }
