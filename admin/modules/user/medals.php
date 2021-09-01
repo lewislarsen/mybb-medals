@@ -60,7 +60,8 @@ if (!$mybb->input['action'])
 	}
 
 	// Grab the amount of pages!
-	$items = count($cache->read('medals'));
+	$medalsCache = $cache->read('medals');
+	$items = is_bool($medalsCache) ? '0' : count($medalsCache);
 
 	$itemsPerPage = "20";
 
@@ -504,7 +505,8 @@ if ($mybb->input['action'] == "members")
 	}
 
 	// Grab the amount of pages!
-	$items = count($cache->read('medals_user'));
+	$medalsUserCache = $cache->read('medals_user');
+	$items = is_bool($medalsUserCache) ? '0' : count($medalsUserCache);
 
 	$itemsPerPage = "10";
 
@@ -794,7 +796,8 @@ if ($mybb->input['action'] == "statistics")
 	$page->output_nav_tabs($sub_tabs, 'statistics');
 
 	// medal count
-	$medalCount = count($cache->read('medals'));
+	$medalsCache = $cache->read('medals');
+	$medalCount = is_bool($medalsCache) ? '0' : count($medalsCache);
 
 	// most awarded medal
 	$mostAwardedMedalQuery = $db->write_query("
@@ -999,7 +1002,8 @@ if ($mybb->input['action'] == "statistics")
 	}
 
 	// favorite count
-	$favoriteCount = count($cache->read('medals_user_favorite'));
+	$favoriteCache = $cache->read('medals_user_favorite');
+	$favoriteCount = is_bool($favoriteCache) ? '0' : count($favoriteCache);
 
 	$table = new Table;
 	$table->construct_header($lang->medal_statistics, array("colspan" => 2));
