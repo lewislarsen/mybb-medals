@@ -310,6 +310,7 @@ if ($mybb->input['action'] == "delete")
 	{
 		$db->delete_query("medals", "medal_id='{$medal['medal_id']}'");
 		$db->delete_query("medals_user", "medal_id='{$medal['medal_id']}'");
+		$db->delete_query("medals_user_favorite", "medal_id='{$medal['medal_id']}'");
 
 		// Log admin action
 		log_admin_action($medal['medal_id'], $medal['medal_name']);
