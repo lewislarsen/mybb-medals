@@ -347,6 +347,12 @@ if ($mybb->input['action'] == "assign")
 		$medal_groups[$medal['medal_id']] = $medal['medal_name'];
 	}
 
+	// if there's no medals, redirect the user
+	if($db->num_rows($query) == 0)
+	{
+		flash_message($lang->create_medal_notice, 'error');
+		admin_redirect("index.php?module=user-medals");
+	}
 
 	if ($mybb->request_method == "post")
 	{

@@ -49,6 +49,7 @@ $l['edit_reason'] = 'Edit reason';
 $l['success_reason_updated'] = "Reason has been updated.";
 $l['edit_reason_desc'] = 'Update the reason for granting a medal to a member.';
 $l['save_reason'] = "Save reason";
+$l['create_medal_notice'] = "You need to create a medal before you can access this page.";
 // stats
 $l['statistics'] = "Statistics";
 $l['statistics_desc'] = "Statistics for the medal system.";
