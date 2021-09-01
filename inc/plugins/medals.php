@@ -25,6 +25,11 @@ if (defined('THIS_SCRIPT'))
 		$templatelist .= 'medal_member_profile_medals,medal_member_profile_medals_row,';
 	}
 
+	if (THIS_SCRIPT == 'medals.php')
+	{
+		$templatelist = 'medal_page_row,medal_page_row_none,medal_page_view';
+	}
+
 	if (THIS_SCRIPT == 'showthread.php')
 	{
 		$templatelist .= 'medal_postbit';
@@ -291,6 +296,37 @@ function medals_activate()
 	background: url("images/medals.png") no-repeat left center;
 }
 </style>',
+		'medal_page_view'               => '<html>
+<head>
+<title>{$mybb->settings[\'bbname\']} - {$lang->medal_base_title}</title>
+{$headerinclude}
+</head>
+<body>
+	{$header}
+	<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
+		<tr>
+			<td class="thead" colspan="3"><strong>{$lang->medal_table_title}</strong></td>
+		</tr>
+		<tr>
+			<td class="tcat" align="center"><span class="smalltext"><strong>{$lang->medal}</strong></span></td>
+			<td class="tcat" align="center"><span class="smalltext"><strong>{$lang->description}</strong></span></td>
+			<td class="tcat" width="50%"><span class="smalltext"><strong>{$lang->date}</strong></span></td>
+		</tr>
+		{$medalRows}
+		{$medalRowsNone}
+	</table>
+	<br />
+	{$footer}
+</body>
+</html>',
+		'medal_page_row'               => '<tr>
+<td class="trow1">{$name}</td>
+<td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
+<td class="trow1" align="center">{$date}</td>
+</tr>',
+		'medal_page_row_none'               => '<tr>
+<td colspan="3" class="trow1">{$lang->no_medals_added}</td>
+</tr>',
 	);
 
 	$group = array(
