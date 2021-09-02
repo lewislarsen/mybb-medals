@@ -121,3 +121,6 @@ $l['plugin_details'] = "Plugin Details";
 // cache
 $l['rebuild_medals_cache'] = "Rebuild Medal Cache";
 $l['cache_rebuilt_successfully'] = "The medal cache has been successfully rebuilt.";
+
+// other
+$l['error_invalid_action'] = "Action does not exist.";

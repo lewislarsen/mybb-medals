@@ -42,6 +42,13 @@ $sub_tabs['statistics'] = array(
 	'description' => $lang->statistics_desc,
 );
 
+// redirect if not in array
+if (!in_array(($mybb->input['action']), ['', 'add', 'assign', 'edit', 'delete', 'assign', 'members', 'revoke', 'editreason', 'statistics', 'cache_rebuild']))
+{
+	flash_message($lang->error_invalid_action, 'error');
+	admin_redirect("index.php?module=user-medals");
+}
+
 if (!$mybb->input['action'])
 {
 	$page->output_header($lang->medals);
