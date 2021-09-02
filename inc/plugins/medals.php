@@ -81,6 +81,9 @@ if (defined('IN_ADMINCP'))
 
 	$plugins->add_hook("admin_tools_adminlog_begin", "medals_admin_tools_adminlog_begin");
 	$plugins->add_hook("admin_tools_get_admin_log_action", "medals_admin_tools_get_admin_log_action");
+
+	$plugins->add_hook("admin_config_permissions", "medals_admin_config_permissions");
+	$plugins->add_hook("admin_config_action_handler", "medals_admin_config_action_handler");
 }
 
 function medals_info()
@@ -296,7 +299,7 @@ function medals_activate()
 	background: url("images/medals.png") no-repeat left center;
 }
 </style>',
-		'medal_page_view'               => '<html>
+		'medal_page_view'           => '<html>
 <head>
 <title>{$mybb->settings[\'bbname\']} - {$lang->medal_base_title}</title>
 {$headerinclude}
@@ -319,12 +322,12 @@ function medals_activate()
 	{$footer}
 </body>
 </html>',
-		'medal_page_row'               => '<tr>
+		'medal_page_row'            => '<tr>
 <td class="trow1" align="center">{$name}</td>
 <td class="trow1" align="center"><span class="smalltext"><img src="{$image}" alt="{$name}" style="width:16px;height:auto;" /></span></td>
 <td class="trow1" align="center">{$date}</td>
 </tr>',
-		'medal_page_row_none'               => '<tr>
+		'medal_page_row_none'       => '<tr>
 <td colspan="3" class="trow1">{$lang->no_medals_added}</td>
 </tr>',
 	);
@@ -561,6 +564,8 @@ function medals_activate()
 
 	// This is required so it updates the settings.php file as well and not only the database - they must be synchronized!
 	rebuild_settings();
+
+	change_admin_permission('user', 'medals', 1);
 }
 
 function medals_deactivate()
@@ -572,6 +577,8 @@ function medals_deactivate()
 
 	find_replace_templatesets("postbit", '#' . preg_quote('</br>{$post[\'medals\']}') . '#', '', 0);
 	find_replace_templatesets("postbit_classic", '#' . preg_quote('</br>{$post[\'medals\']}') . '#', '', 0);
+
+	change_admin_permission('config', 'medals', 0);
 }
 
 function medals_admin_user_menu(&$sub_menu)
@@ -956,4 +963,22 @@ function medals_admin_tools_cache_rebuild()
 	rebuild_medals_user_favorite_cache();
 	rebuild_medals_user_cache();
 	rebuild_medals_cache();
+}
+
+// set the admin permissions
+function medals_admin_config_action_handler(&$action)
+{
+	$action['medals'] = [
+		'active' => 'medals',
+		'file'   => 'medals.php',
+	];
+}
+
+function medals_admin_config_permissions(&$admin_permissions)
+{
+	global $lang;
+
+	$lang->load("medals");
+
+	$admin_permissions['medals'] = $lang->manage_medals_permission ?? null;
 }
